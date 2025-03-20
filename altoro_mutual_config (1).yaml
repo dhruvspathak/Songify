@@ -1,0 +1,86 @@
+env:
+    contexts:
+    -
+        excludePaths: []
+        includePaths:
+        - http://testfire.net/.*
+        name: Default Context
+        technology:
+            exclude: []
+        urls:
+        - http://testfire.net/
+        authentication:
+            method: form
+            parameters:
+                loginPageUrl: http://testfire.net/login.jsp
+                loginRequestBody: username={%username%}&password={%password%}
+                loginRequestUrl: http://testfire.net/login.jsp
+            verification:
+                method: poll
+                loggedInRegex: Log out
+                loggedOutRegex: Log in
+                pollFrequency: 60
+                pollUnits: requests
+                pollUrl: http://testfire.net/login.jsp
+        sessionManagement:
+            method: cookie
+            parameters: {}
+        users:
+        -
+            credentials:
+                password: admin
+                username: admin
+            name: authentication user
+    vars: {}
+    parameters:
+        failOnError: true
+        failOnWarning: false
+        progressToStdout: true
+jobs:
+-
+    parameters:
+        scanOnlyInScope: true
+        enableTags: false
+    rules: []
+    name: passiveScan-config
+    type: passiveScan-config
+-
+    parameters:
+        context: Default Context
+        maxDuration: 0
+        maxDepth: 0
+        maxChildren: 0
+        user: authentication user
+    name: spider
+    type: spider
+-
+    parameters:
+        context: Default Context
+        maxDuration: 60
+        maxCrawlDepth: 10
+        numberOfBrowsers: 4
+        runOnlyIfModern: false
+        user: authentication user
+    name: spiderAjax
+    type: spiderAjax
+-
+    parameters: {}
+    name: passiveScan-wait
+    type: passiveScan-wait
+-
+    parameters:
+        context: Default Context
+        threadPerHost: 4
+        user: authentication user
+    policyDefinition:
+        rules: []
+    name: activeScan
+    type: activeScan
+-
+    parameters:
+        template: traditional-pdf
+        reportDir: ''
+        reportTitle: ZAP Scanning Report
+        reportDescription: ''
+    name: report-pdf
+    type: report
