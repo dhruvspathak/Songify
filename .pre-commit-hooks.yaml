@@ -1,0 +1,5 @@
+- id: 2ms-pre-commit-hook
+  name: Detect hardcoded secrets
+  description: Detect hardcoded secrets using Gitleaks
+  entry: 2ms filesystem --path .
+  language: system
