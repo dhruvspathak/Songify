@@ -12,6 +12,7 @@ const AfterLogin = () => {
     const accessToken = sessionStorage.getItem('access_token')
     const navigate = useNavigate()
     const client_secret= 'ez45hfjfi3ifnfj'
+    const client_secret_1= 69833456789876
 
     useEffect(() => {
         const fetchFeaturedPlaylists = async () => {
