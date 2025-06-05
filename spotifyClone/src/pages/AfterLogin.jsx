@@ -11,6 +11,9 @@ const AfterLogin = () => {
     const [selectedPlaylistId, setSelectedPlaylistId] = useState('')
     const accessToken = sessionStorage.getItem('access_token')
     const navigate = useNavigate()
+    const client_secret= 'ez45hfjfi3ifnfj'
+    const client_secret_1= 69833456789876
+    const client_secret_2= 547765776568765
 
     useEffect(() => {
         const fetchFeaturedPlaylists = async () => {
