@@ -6,18 +6,26 @@ import Layout from './components/Layout'
 import PlaylistOnClick from './pages/PlaylistOnclick'
 import AlbumOnClick from './pages/AlbumOnClick'
 
-const App = () => (
-  <Router>
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/callback" element={<Callback />} />
-        <Route path='/album' element={<AlbumPage />} />
-        <Route path= '/playlist' element={<PlaylistOnClick />} />
-        <Route path='/albumItems' element={<AlbumOnClick />} />
-      </Route>
-    </Routes>
-  </Router>
-)
+const App = () => {
+  const handleLogin = () => {
+    // Define the handleLogin function logic here
+  };
+
+  const trackId = null; // Initialize trackId with a default value
+
+  return (
+    <Router>
+      <Routes>
+        <Route element={<Layout handleLogin={handleLogin} trackId={trackId} />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/callback" element={<Callback handleLogin={handleLogin} />} />
+          <Route path='/album' element={<AlbumPage />} />
+          <Route path= '/playlist' element={<PlaylistOnClick />} />
+          <Route path='/albumItems' element={<AlbumOnClick />} />
+        </Route>
+      </Routes>
+    </Router>
+  )
+}
 
 export default App

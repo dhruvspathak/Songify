@@ -5,7 +5,7 @@ import { Outlet } from 'react-router-dom'
 import { useState } from 'react'
 
 const Layout = ({ handleLogin }) => {
-    const [trackId, setTrackId] = useState(null)
+    const [trackId, setTrackId] = useState('defaultTrackId') // Replace 'defaultTrackId' with a valid default value
 
     return (
         <div>
