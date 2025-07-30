@@ -64,7 +64,7 @@ jobs:
       - name: Run Checkmarx AST Scan
         run: |
           /home/linuxbrew/.linuxbrew/Cellar/ast-cli/*/bin/cx scan create \
-            -s . \
+            -s https://github.com/${{ github.repository }} \
             --agent GitHub \
             --project-name ${{ github.repository }} \
             --branch ${GITHUB_REF##*/} \
