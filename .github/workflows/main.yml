@@ -1,4 +1,4 @@
-name: Checkmarx SCA-Resolver
+name: Checkmarx SCA Scan (Windows)
 
 on:
   push:
@@ -24,7 +24,6 @@ jobs:
           chmod 755 ./ScaResolver  # Ensure proper permissions
           ls -l ./ScaResolver  # Verify permissions
           ./ScaResolver --help  # Test executable
-
       - name: Upload CxSCA Resolver as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -51,14 +50,17 @@ jobs:
           ls -l /home/runner/work/Songify/Songify/ScaResolver  # Verify artifact is here
           echo "Checking if ScaResolver is an executable:"
           file /home/runner/work/Songify/Songify/ScaResolver  # Verify it's a valid executable
-
+      - name: Ensure permissions inside Docker container
+        run: |
+          echo "Setting proper permissions on ScaResolver inside Docker:"
+          sudo chmod 755 /home/runner/work/Songify/Songify/ScaResolver  # Ensure executable permissions inside Docker container
+          ls -l /home/runner/work/Songify/Songify/ScaResolver  # Verify file is executable inside Docker
       - name: Install Homebrew and Checkmarx AST CLI
         run: |
           # Install Homebrew
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           # Install Checkmarx AST CLI
           /home/linuxbrew/.linuxbrew/bin/brew install checkmarx/ast-cli/ast-cli
-
       - name: Run Checkmarx AST Scan
         run: |
           /home/linuxbrew/.linuxbrew/Cellar/ast-cli/*/bin/cx scan create \
