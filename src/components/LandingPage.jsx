@@ -1,7 +1,7 @@
 import queryString from 'query-string'
 import Layout from './Layout'
-import AfterLogin from '../pages/AfterLogin'
-import BeforeLogin from '../pages/BeforeLogin'
+import AfterLogin from '../pages/AfterLogin/AfterLogin'
+import BeforeLogin from '../pages/BeforeLogin/BeforeLogin'
 
 const access_token = sessionStorage.getItem('access_token')
 

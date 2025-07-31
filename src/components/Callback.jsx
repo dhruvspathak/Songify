@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import queryString from 'query-string'
 import Layout from './Layout'
-import BeforeLogin from '../pages/AfterLogin'
+import BeforeLogin from '../pages/AfterLogin/AfterLogin'
 import { getToken } from '../services/spotifyService'
 
 const Callback = ({ handleLogin }) => {

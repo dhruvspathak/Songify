@@ -1,50 +1,56 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
 import LandingPage from "./components/LandingPage";
 import Callback from "./components/Callback";
 import AlbumPage from "./pages/AlbumPage";
 import Layout from "./components/Layout";
 import PlaylistOnClick from "./pages/PlaylistOnclick";
 import AlbumOnClick from "./pages/AlbumOnClick";
+import axios from "axios";
+import qs from "qs";
+
+const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+const clientSecret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
+
+const SPOTIFY_AUTH_BASE = "https://accounts.spotify.com/api";
 
 const App = () => {
-  const handleLogin = () => {
-    // Define the handleLogin function logic here
-    const access_token = sessionStorage.getItem("access_token");
+  async function handleLogin() {
+    try {
+      const tokenUrl = `${SPOTIFY_AUTH_BASE}/token`;
 
-    const generateRandomString = (length) => {
-      let text = "";
-      const possible =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      for (let i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-      }
-      return text;
-    };
+      const tokenResponse = await axios.post(
+        tokenUrl,
+        qs.stringify({
+          grant_type: "client_credentials",
+          client_id: clientId,
+          client_secret: clientSecret,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
 
-    const scopeList =
-      "streaming user-read-playback-state user-modify-playback-state user-read-currently-playing";
+      const accessToken = tokenResponse.data.access_token;
+      console.log("Access Token Granted");
+    } catch (error) {
+      console.error(
+        "Error retrieving access token:",
+        error.response?.data || error.message
+      );
+    }
+  }
 
-    const handleLogin = () => {
-      const state = generateRandomString(16);
-      const queryParams = queryString.stringify({
-        response_type: "code",
-        client_id: import.meta.env.VITE_CLIENT_ID,
-        scope: scopeList,
-        redirect_uri: "http://localhost:5173/callback",
-        state: state,
-        show_dialog: true,
-      });
-
-      window.location.href = `https://accounts.spotify.com/authorize?${queryParams}`;
-    };
-  };
-
-  const trackId = null; // Initialize trackId with a default value
+  useEffect(() => {
+    handleLogin();
+  }, []);
 
   return (
     <Router>
       <Routes>
-        <Route element={<Layout handleLogin={handleLogin} trackId={trackId} />}>
+        <Route element={<Layout handleLogin={handleLogin} />}>
           <Route path="/" element={<LandingPage />} />
           <Route
             path="/callback"

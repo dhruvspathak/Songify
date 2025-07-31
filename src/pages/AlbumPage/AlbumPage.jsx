@@ -5,7 +5,7 @@ import axios from 'axios'
 import { Grid, Card, CardContent, CardMedia } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import './AlbumPage.css'
-import BeforeLogin from './BeforeLogin'
+import BeforeLogin from '../BeforeLogin/BeforeLogin'
 
 const AlbumPage = () => {
     const accessToken = sessionStorage.getItem('access_token')
