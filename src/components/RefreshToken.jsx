@@ -3,6 +3,7 @@ import axios from 'axios'
 const refreshToken = async (refreshToken) => {
   const client_id = import.meta.env.VITE_CLIENT_ID
   const client_secret = import.meta.env.VITE_CLIENT_SECRET
+  var secret_key= "eyjbvul3hnbctuilvhiovn9uglsrthgi4biowrt55thhbgiw4gh8bvtirybv9lwgbwhvwnongbowhioy4"
 
   const authOptions = {
     method: 'post',
