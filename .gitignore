@@ -12,6 +12,25 @@ dist
 dist-ssr
 *.local
 
+# Additional build output
+build/
+
+# Vite
+.vite/
+
+# Static files
+public/vite.svg
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Miscellaneous
+*.bak
+*.tmp
+Thumbs.db
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
