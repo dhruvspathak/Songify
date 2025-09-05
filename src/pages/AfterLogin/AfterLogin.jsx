@@ -1,6 +1,6 @@
 import './AfterLogin.css'
 import { useState, useEffect } from 'react'
-import Typography from '@mui/material/Typography'
+import Typography from "@mui/material/Typography"
 import Box from '@mui/material/Box'
 import axios from 'axios'
 import { Grid, Card, CardContent, CardMedia } from '@mui/material'

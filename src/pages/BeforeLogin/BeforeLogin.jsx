@@ -1,5 +1,5 @@
 import './BeforeLogin.css'
-import Typography from '@mui/material/Typography'
+import Typography from "@mui/material/Typography"
 
 const BeforeLogin = () => {
     return (
