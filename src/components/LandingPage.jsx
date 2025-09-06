@@ -1,42 +1,51 @@
-import queryString from 'query-string'
-import Layout from './Layout'
+import { useEffect, useState } from 'react'
 import AfterLogin from '../pages/AfterLogin'
 import BeforeLogin from '../pages/BeforeLogin'
+// import authService from '../api/authService'
 
-const access_token = sessionStorage.getItem('access_token')
+const LandingPageContent = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-const generateRandomString = (length) => {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  for (let i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length))
+  useEffect(() => {
+    // Check if user is already authenticated via secure backend
+    const checkAuthStatus = async () => {
+      try {
+        // const user = await authService.getCurrentUser()
+        // setIsAuthenticated(!!user)
+        setIsAuthenticated(false) // Temporary for testing
+      } catch (error) {
+        setIsAuthenticated(false)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuthStatus()
+  }, [])
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh' 
+      }}>
+        Loading...
+      </div>
+    )
   }
-  return text
-}
 
-const scopeList = 'streaming user-read-playback-state user-modify-playback-state user-read-currently-playing'
-
-const handleLogin = () => {
-  const state = generateRandomString(16)
-  const queryParams = queryString.stringify({
-    response_type: 'code',
-    client_id: import.meta.env.VITE_CLIENT_ID,
-    scope: scopeList,
-    redirect_uri: 'http://localhost:5173/callback',
-    state: state,
-    show_dialog: true,
-  })
-
-  window.location.href = `https://accounts.spotify.com/authorize?${queryParams}`
+  return (
+    <div>
+      {isAuthenticated ? <AfterLogin /> : <BeforeLogin />}
+    </div>
+  )
 }
 
 const LandingPage = () => {
-  return (
-    <div>
-      <Layout handleLogin={handleLogin} />
-      {access_token ? <AfterLogin /> : <BeforeLogin />}
-    </div>
-  )
+  return <LandingPageContent />
 }
 
 export default LandingPage
