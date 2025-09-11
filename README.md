@@ -36,6 +36,8 @@ cd songify
 
 ### 3. Configure Environment Variables
 
+⚠️ **Security Notice**: Please review the [Environment Setup Guide](ENVIRONMENT_SETUP.md) for secure configuration.
+
 **Frontend:**
 ```bash
 cd frontend
@@ -48,6 +50,13 @@ cp env.template .env
 cd backend
 cp env.template .env
 # Edit .env with your Spotify credentials
+```
+
+**Root Level:**
+```bash
+# Create .env file for Redis and other shared secrets
+# See ENVIRONMENT_SETUP.md for details
+echo "REDIS_PASSWORD=your_secure_redis_password_here" > .env
 ```
 
 ### 4. Install Dependencies
@@ -148,6 +157,12 @@ songify/
 - `REDIRECT_URI` - OAuth redirect URI
 - `PORT` - Server port (default: 3000)
 - `SESSION_SECRET` - Random string for session security
+- `REDIS_PASSWORD` - Secure password for Redis database
+
+**Root Level (.env):**
+- `REDIS_PASSWORD` - Secure password for Redis authentication
+
+📋 **For complete configuration details, see [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)**
 
 ## 🎯 Key Features Explained
 
@@ -193,6 +208,22 @@ Use the "Debug Scopes" button in the player to check:
 - Account type (Free vs Premium)
 - Current scopes and permissions
 
+## 🔒 Security
+
+### Recent Security Updates
+- ✅ **Fixed**: Hardcoded Redis password vulnerability in `docker-compose.yml`
+- ✅ **Implemented**: Mandatory environment variable configuration for Redis authentication
+- ✅ **Added**: Comprehensive security documentation and setup guides
+
+### Security Best Practices
+1. **Environment Variables**: Never commit `.env` files to version control
+2. **Strong Passwords**: Use cryptographically secure random passwords
+3. **Regular Rotation**: Rotate credentials regularly, especially in production
+4. **Access Control**: Limit Redis access to required services only
+5. **Monitoring**: Monitor for unauthorized access attempts
+
+📋 **See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for detailed security configuration**
+
 ## 🚀 Deployment
 
 ### Production Checklist
@@ -201,6 +232,7 @@ Use the "Debug Scopes" button in the player to check:
    - Set `NODE_ENV=production`
    - Use HTTPS URLs for redirect URIs
    - Generate secure session secrets
+   - **CRITICAL**: Set strong `REDIS_PASSWORD`
 
 2. **Spotify App Settings:**
    - Update redirect URIs for production domain
@@ -211,6 +243,7 @@ Use the "Debug Scopes" button in the player to check:
    - Enable HTTPS
    - Set secure cookie options
    - Configure CORS properly
+   - Use secure Redis authentication
 
 ## 🤝 Contributing
 
