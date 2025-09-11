@@ -36,7 +36,7 @@ const generateRandomString = length => {
 app.get("/auth/login", (req, res) => {
   const state = generateRandomString(16);
   const redirectUri = `${process.env.FRONTEND_URL}/callback`;
-  const scope = 'user-read-private user-read-email streaming user-read-playback-state user-modify-playback-state';
+  const scope = 'user-read-private user-read-email streaming user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative user-library-read user-top-read playlist-modify-public playlist-modify-private';
 
   // Store state in cookie
   res.cookie('spotify_auth_state', state, {
@@ -59,6 +59,9 @@ app.get("/auth/login", (req, res) => {
 
   res.redirect(spotifyAuthUrl);
 });
+
+// Store used authorization codes to prevent reuse
+const usedCodes = new Set();
 
 // Callback endpoint
 app.post("/auth/callback", async (req, res) => {
@@ -84,6 +87,23 @@ app.post("/auth/callback", async (req, res) => {
       });
     }
 
+    // Check if authorization code has already been used
+    if (usedCodes.has(code)) {
+      console.log('Authorization code already used:', code.substring(0, 20) + '...');
+      return res.status(400).json({
+        success: false,
+        error: "Authorization code already used"
+      });
+    }
+
+    // Mark code as used immediately to prevent race conditions
+    usedCodes.add(code);
+    
+    // Clean up used codes after 5 minutes to prevent memory leaks
+    setTimeout(() => {
+      usedCodes.delete(code);
+    }, 5 * 60 * 1000);
+
     const client_id = process.env.SPOTIFY_CLIENT_ID;
     const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 
@@ -106,6 +126,7 @@ app.post("/auth/callback", async (req, res) => {
     const response = await axios({
       method: "POST",
       url: "https://accounts.spotify.com/api/token",
+      timeout: 10000,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Authorization: "Basic " + Buffer.from(client_id + ":" + client_secret).toString("base64")
@@ -117,12 +138,7 @@ app.post("/auth/callback", async (req, res) => {
       }).toString()
     });
 
-    console.log('Token exchange response received:', {
-      status: response.status,
-      hasAccessToken: !!response.data.access_token,
-      hasRefreshToken: !!response.data.refresh_token,
-      expiresIn: response.data.expires_in
-    });
+    console.log('✅ Token exchange successful');
 
     const { access_token, refresh_token, expires_in } = response.data;
 
@@ -150,14 +166,34 @@ app.post("/auth/callback", async (req, res) => {
       expires_in: expires_in
     });
   } catch (error) {
+    // Remove the code from used codes if the exchange fails
+    const { code } = req.body;
+    if (code && usedCodes.has(code)) {
+      usedCodes.delete(code);
+      console.log('Removed failed authorization code from used codes');
+    }
+
     console.error("OAuth callback error details:", {
       error: error.message,
       response: error.response?.data,
       requestBody: req.body
     });
-    res.status(500).json({
+    
+    // Provide more specific error messages
+    let errorMessage = "Authentication failed";
+    let statusCode = 500;
+    
+    if (error.response?.data?.error === 'invalid_grant') {
+      errorMessage = "Authorization code is invalid or expired. Please try logging in again.";
+      statusCode = 400;
+    } else if (error.response?.data?.error === 'invalid_client') {
+      errorMessage = "Invalid client credentials. Please check your Spotify app configuration.";
+      statusCode = 500;
+    }
+    
+    res.status(statusCode).json({
       success: false,
-      error: "Authentication failed",
+      error: errorMessage,
       details: error.response?.data?.error_description || error.message
     });
   }
@@ -178,7 +214,8 @@ app.get("/auth/me", async (req, res) => {
     const userResponse = await axios.get("https://api.spotify.com/v1/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`
-      }
+      },
+      timeout: 10000
     });
 
     res.json({
@@ -198,6 +235,154 @@ app.get("/auth/me", async (req, res) => {
     res.status(500).json({
       success: false,
       error: "Failed to fetch user data"
+    });
+  }
+});
+
+// Get access token endpoint for frontend use
+app.get("/auth/token", async (req, res) => {
+  try {
+    const accessToken = req.cookies.spotify_access_token;
+
+    if (!accessToken) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authenticated"
+      });
+    }
+
+    res.json({
+      success: true,
+      access_token: accessToken
+    });
+  } catch (error) {
+    console.error("Get token error:", error.message);
+    res.status(500).json({
+      success: false,
+      error: "Failed to retrieve access token"
+    });
+  }
+});
+
+// Debug endpoint to check token and scopes
+app.get("/auth/debug", async (req, res) => {
+  try {
+    const accessToken = req.cookies.spotify_access_token;
+
+    if (!accessToken) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authenticated"
+      });
+    }
+
+    // Test the token by calling Spotify's /me endpoint
+    const userResponse = await axios.get("https://api.spotify.com/v1/me", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      },
+      timeout: 10000
+    });
+
+    // Test various endpoints to see what scopes we have
+    const endpointTests = [];
+
+    // Test user playlists
+    try {
+      const playlistResponse = await axios.get("https://api.spotify.com/v1/me/playlists", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { limit: 1 },
+        timeout: 10000
+      });
+      endpointTests.push({ endpoint: '/me/playlists', success: true, status: playlistResponse.status });
+    } catch (playlistError) {
+      endpointTests.push({ 
+        endpoint: '/me/playlists', 
+        success: false, 
+        status: playlistError.response?.status,
+        error: playlistError.response?.data?.error
+      });
+    }
+
+    // Test user top tracks
+    try {
+      const topTracksResponse = await axios.get("https://api.spotify.com/v1/me/top/tracks", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { limit: 1 },
+        timeout: 10000
+      });
+      endpointTests.push({ endpoint: '/me/top/tracks', success: true, status: topTracksResponse.status });
+    } catch (topTracksError) {
+      endpointTests.push({ 
+        endpoint: '/me/top/tracks', 
+        success: false, 
+        status: topTracksError.response?.status,
+        error: topTracksError.response?.data?.error
+      });
+    }
+
+    // Test browse/featured-playlists endpoint
+    try {
+      const browseResponse = await axios.get("https://api.spotify.com/v1/browse/featured-playlists", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        timeout: 10000
+      });
+      endpointTests.push({ endpoint: '/browse/featured-playlists', success: true, status: browseResponse.status });
+    } catch (browseError) {
+      endpointTests.push({ 
+        endpoint: '/browse/featured-playlists', 
+        success: false, 
+        status: browseError.response?.status,
+        error: browseError.response?.data?.error
+      });
+    }
+
+    // Test playback devices
+    try {
+      const devicesResponse = await axios.get("https://api.spotify.com/v1/me/player/devices", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        timeout: 10000
+      });
+      endpointTests.push({ endpoint: '/me/player/devices', success: true, status: devicesResponse.status, data: devicesResponse.data });
+    } catch (devicesError) {
+      endpointTests.push({ 
+        endpoint: '/me/player/devices', 
+        success: false, 
+        status: devicesError.response?.status,
+        error: devicesError.response?.data?.error
+      });
+    }
+
+    // Decode token to check scopes (basic info only)
+    const tokenParts = accessToken.split('.');
+    let tokenInfo = null;
+    try {
+      // Note: We can't decode Spotify tokens as they're opaque, but we can check what endpoints work
+      tokenInfo = "Spotify uses opaque tokens - scope info determined by endpoint access";
+    } catch (e) {
+      tokenInfo = "Cannot decode token";
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: userResponse.data.id,
+        display_name: userResponse.data.display_name,
+        email: userResponse.data.email,
+        country: userResponse.data.country,
+        product: userResponse.data.product // Free vs Premium
+      },
+      tokenValid: true,
+      tokenInfo: tokenInfo,
+      requestedScopes: "user-read-private user-read-email streaming user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative user-library-read user-top-read playlist-modify-public playlist-modify-private",
+      endpointTests: endpointTests
+    });
+  } catch (error) {
+    console.error("Debug endpoint error:", error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      error: "Debug check failed",
+      details: error.response?.data || error.message
     });
   }
 });

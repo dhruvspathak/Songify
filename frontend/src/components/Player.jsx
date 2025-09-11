@@ -1,215 +1,17 @@
-// import PropTypes from 'prop-types'
-
-// const MusicPlayerSlider = () => {
-
-//   const trackId= '51EC3I1nQXpec4gDk0mQyP'
-//   return (
-//     <>
-//       <div className="container">
-//         <iframe
-//           title="Spotify Player"
-//           src={`https://open.spotify.com/embed/track/${trackId}?utm_source=generator`}
-//           width="95%"
-//           height="390"
-//           frameBorder="0"
-//           allow="encrypted-media"
-//         ></iframe>
-//       </div>
-//       <h6>{trackId ? trackId : `no id`}</h6>
-//     </>
-//   )
-// }
-
-// MusicPlayerSlider.propTypes = {
-//   trackId: PropTypes.string.isRequired
-// }
-
-
-// export default MusicPlayerSlider
-
-
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-// import { useState, useEffect } from 'react'
-// import PropTypes from 'prop-types'
-import './Player.css'
-
-// function MusicPlayerSlider({ trackId }) {
-//     const accessToken = sessionStorage.getItem('access_token')
-//     const track = {
-//         name: "",
-//         album: {
-//             images: [{ url: "" }]
-//         },
-//         artists: [{ name: "" }]
-//     }
-//     const [player, setPlayer] = useState(undefined)
-//     const [deviceID, setDeviceID] = useState(null)
-//     const [is_paused, setPaused] = useState(false)
-//     const [is_active, setActive] = useState(false)
-//     const [current_track, setTrack] = useState(track)
-
-
-//     useEffect(() => {
-//         const script = document.createElement("script")
-//         script.src = "https://sdk.scdn.co/spotify-player.js"
-//         script.async = true
-//         script.onload = () => console.log("Spotify SDK script loaded")
-//         document.body.appendChild(script)
-
-//         window.onSpotifyWebPlaybackSDKReady = () => {
-//             console.log("Spotify Web Playback SDK is ready")
-
-//             const player = new window.Spotify.Player({
-//                 name: 'Web Playback SDK',
-//                 getOAuthToken: cb => { cb(accessToken) },
-//                 volume: 0.5
-//             })
-
-//             setPlayer(player)
-
-//             player.addListener('initialization_error', ({ message }) => {
-//                 console.error('Failed to initialize', message)
-//             })
-//             player.addListener('authentication_error', ({ message }) => {
-//                 console.error('Failed to authenticate', message)
-//             })
-//             player.addListener('account_error', ({ message }) => {
-//                 console.error('Failed to validate Spotify account', message)
-//             })
-//             player.addListener('playback_error', ({ message }) => {
-//                 console.error('Failed to perform playback', message)
-//             })
-
-//             player.addListener('ready', ({ device_id }) => {
-//                 console.log('Ready with Device ID', device_id)
-//                 setDeviceID(device_id)
-//                 console.log('Set Device ID:', device_id)
-//             })
-
-//             player.addListener('not_ready', ({ device_id }) => {
-//                 console.log('Device ID has gone offline', device_id)
-//             })
-
-//             player.addListener('player_state_changed', (state) => {
-//                 if (!state) {
-//                     return
-//                 }
-//                 setTrack(state.track_window.current_track)
-//                 setPaused(state.paused)
-//                 player.getCurrentState().then(state => {
-//                     setActive(!!state)
-//                 })
-//             })
-
-//             player.connect().then(success => {
-//                 if (success) {
-//                     console.log('The Web Playback SDK successfully connected to Spotify!')
-//                 } else {
-//                     console.error('The Web Playback SDK failed to connect to Spotify.')
-//                 }
-//             })
-//         }
-//     }, [])
-
-
-//     useEffect(() => {
-//         if (player && trackId && deviceID) {
-//             console.log("Pausing player before playing new track")
-//             player.pause().then(() => {
-//                 fetch(`https://api.spotify.com/v1/me/player/play`, {
-//                     method: 'PUT',
-//                     headers: {
-//                         'Authorization': `Bearer ${accessToken}`,
-//                         'Content-Type': 'application/json'
-//                     },
-//                     body: JSON.stringify({ uris: [`spotify:track:${trackId}`] })
-//                 }).then(response => {
-//                     if (response.ok) {
-//                         console.log(`Playing track ID: ${trackId}`)
-//                     } else {
-//                         console.error('Failed to play track:', response)
-//                     }
-//                 }).catch(err => {
-//                     console.error('Error playing track:', err)
-//                 })
-//             }).catch(err => {
-//                 console.error('Error pausing player:', err)
-//             })
-//         }
-//     }, [player, trackId, deviceID, accessToken])
-
-//     const transferPlayback = async () => {
-//         if (!deviceID) {
-//             console.error('No device ID available for transfer playback')
-//             return
-//         }
-
-//         try {
-//             const response = await fetch('https://api.spotify.com/v1/me/player', {
-//                 method: 'PUT',
-//                 headers: {
-//                     'Authorization': `Bearer ${accessToken}`,
-//                     'Content-Type': 'application/json'
-//                 },
-//                 body: JSON.stringify({
-//                     device_ids: [deviceID],
-//                     play: true
-//                 })
-//             })
-
-//             if (!response.ok) {
-//                 throw new Error('Failed to transfer playback')
-//             }
-
-//             console.log('Playback transferred successfully')
-//         } catch (error) {
-//             console.error('Error transferring playback:', error)
-//         }
-//     }
-
-//     return (
-//         <div className="container">
-//             <div className="main-wrapper">
-//                 <img src={current_track.album.images[0].url} className="now-playing__cover" alt="" />
-//                 <div className="now-playing__side">
-//                     <div className="now-playing__name">{current_track.name}</div>
-//                     <div className="now-playing__artist">{current_track.artists[0].name}</div>
-//                 </div>
-//                 <div className='buttonList'>
-//                 <button className="btn-spotify" onClick={() => player.previousTrack()}>&lt;&lt;</button>
-//                 <button className="btn-spotify" onClick={() => player.togglePlay()}>{is_paused ? "PLAY" : "PAUSE"}</button>
-//                 <button className="btn-spotify" onClick={() => player.nextTrack()}>&gt;&gt;</button>
-//                 </div>
-//             </div>
-//             <div className="controls">
-//                 <button className="btn-spotify" onClick={transferPlayback}>Transfer Playback</button>
-//             </div>
-//         </div>
-//     )
-// }
-
-// MusicPlayerSlider.propTypes = {
-//     trackId: PropTypes.string.isRequired
-// }
-
-// export default MusicPlayerSlider
-
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { getAccessToken } from '../utils/auth'
+import './Player.css'
 
 function MusicPlayerSlider({ trackId }) {
-    const accessToken = sessionStorage.getItem('access_token')
+    // ALL HOOKS MUST BE DECLARED AT THE TOP - BEFORE ANY EARLY RETURNS
+    const [accessToken, setAccessToken] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [player, setPlayer] = useState(undefined)
+    const [deviceID, setDeviceID] = useState(null)
+    const [is_paused, setPaused] = useState(false)
+    const [is_active, setActive] = useState(false)
+    
     const track = {
         name: "No track selected",
         album: {
@@ -218,7 +20,184 @@ function MusicPlayerSlider({ trackId }) {
         artists: [{ name: "Please select a track" }]
     }
     
-    // Don't initialize player if no access token or trackId
+    const [current_track, setTrack] = useState(track)
+    const [deviceStatus, setDeviceStatus] = useState('connecting')
+    
+    // Fetch access token on component mount
+    useEffect(() => {
+        const fetchToken = async () => {
+            const token = await getAccessToken()
+            setAccessToken(token)
+            setLoading(false)
+        }
+        fetchToken()
+    }, [])
+
+    // Initialize Spotify SDK when access token is available
+    useEffect(() => {
+        // Only load Spotify SDK if we have a valid access token
+        if (!accessToken) {
+            return
+        }
+        
+        const script = document.createElement("script")
+        script.src = "https://sdk.scdn.co/spotify-player.js"
+        script.async = true
+        script.onload = () => {}
+        document.body.appendChild(script)
+
+        window.onSpotifyWebPlaybackSDKReady = () => {
+
+            const player = new window.Spotify.Player({
+                name: 'Web Playback SDK',
+                getOAuthToken: cb => { cb(accessToken) },
+                volume: 0.5
+            })
+
+            setPlayer(player)
+
+            player.addListener('initialization_error', ({ message }) => {
+                console.error('Failed to initialize', message)
+            })
+            player.addListener('authentication_error', ({ message }) => {
+                console.error('Failed to authenticate', message)
+            })
+            player.addListener('account_error', ({ message }) => {
+                console.error('Failed to validate Spotify account', message)
+            })
+            player.addListener('playback_error', ({ message }) => {
+                console.error('Failed to perform playback', message)
+            })
+
+            player.addListener('ready', ({ device_id }) => {
+                setDeviceID(device_id)
+                setDeviceStatus('connected')
+                fetchDeviceIDs()
+            })
+
+            player.addListener('not_ready', ({ device_id }) => {
+                setDeviceStatus('disconnected')
+            })
+
+            player.addListener('player_state_changed', (state) => {
+                if (!state) {
+                    return
+                }
+                setTrack(state.track_window.current_track)
+                setPaused(state.paused)
+                player.getCurrentState().then(state => {
+                    setActive(!!state)
+                })
+            })
+
+            player.connect().then(success => {
+                if (!success) {
+                    console.error('Web Playback SDK failed to connect')
+                }
+            })
+        }
+    }, [accessToken])
+
+    // Handle track changes
+    useEffect(() => {
+        if (player && trackId && deviceID && accessToken) {
+            console.log("Attempting to play track:", trackId)
+            
+            // Strategy: Use Web Playback SDK for immediate playback, fallback to API
+            const playTrackViaSdk = () => {
+                return new Promise((resolve, reject) => {
+                    // First, ensure our web player is the active device
+                    transferPlayback().then(() => {
+                        // Wait a moment for device transfer to complete
+                        setTimeout(() => {
+                            // Now use the API to start playback on our device
+                            fetch(`https://api.spotify.com/v1/me/player/play`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': `Bearer ${accessToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ 
+                                    uris: [`spotify:track:${trackId}`],
+                                    device_id: deviceID
+                                })
+                            }).then(response => {
+                                if (response.ok) {
+                                    console.log(`✅ Successfully started playing track: ${trackId}`)
+                                    resolve(response)
+                                } else if (response.status === 404) {
+                                    // Device not found, try without specifying device
+                                    return fetch(`https://api.spotify.com/v1/me/player/play`, {
+                                        method: 'PUT',
+                                        headers: {
+                                            'Authorization': `Bearer ${accessToken}`,
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({ 
+                                            uris: [`spotify:track:${trackId}`]
+                                        })
+                                    })
+                                } else {
+                                    throw new Error(`API Playback failed: ${response.status}`)
+                                }
+                            }).then(response => {
+                                if (response && response.ok) {
+                                    console.log(`✅ Successfully started playing track (no device specified): ${trackId}`)
+                                    resolve(response)
+                                } else if (response) {
+                                    throw new Error(`Fallback playback failed: ${response.status}`)
+                                }
+                            }).catch(reject)
+                        }, 1000) // Wait 1 second for device transfer
+                    }).catch(transferError => {
+                        console.warn('Device transfer failed, trying direct API call:', transferError)
+                        // Try direct API call without transfer
+                        fetch(`https://api.spotify.com/v1/me/player/play`, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                uris: [`spotify:track:${trackId}`]
+                            })
+                        }).then(response => {
+                            if (response.ok) {
+                                console.log(`✅ Direct API playback successful: ${trackId}`)
+                                resolve(response)
+                            } else {
+                                throw new Error(`Direct API failed: ${response.status}`)
+                            }
+                        }).catch(reject)
+                    })
+                })
+            }
+
+            playTrackViaSdk().catch(err => {
+                console.error('❌ All playback methods failed:', err)
+                if (err.message.includes('404')) {
+                    console.warn('💡 Tip: Make sure you have Spotify Premium and an active Spotify session running')
+                } else if (err.message.includes('403')) {
+                    console.warn('💡 Tip: Check that your Spotify app has proper permissions and is not in development mode')
+                }
+            })
+        }
+    }, [player, trackId, deviceID, accessToken])
+    
+    // Don't initialize player if loading or no access token
+    if (loading) {
+        return (
+            <div className="container">
+                <div className="main-wrapper">
+                    <div className="now-playing__side">
+                        <div className="now-playing__name">Loading...</div>
+                        <div className="now-playing__artist">Checking authentication</div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+    
     if (!accessToken) {
         return (
             <div className="container">
@@ -231,11 +210,6 @@ function MusicPlayerSlider({ trackId }) {
             </div>
         )
     }
-    const [player, setPlayer] = useState(undefined)
-    const [deviceID, setDeviceID] = useState(null)
-    const [is_paused, setPaused] = useState(false)
-    const [is_active, setActive] = useState(false)
-    const [current_track, setTrack] = useState(track)
 
     const fetchDeviceIDs = async () => {
         try {
@@ -264,105 +238,38 @@ function MusicPlayerSlider({ trackId }) {
         }
     }
 
-    useEffect(() => {
-        // Only load Spotify SDK if we have a valid access token
-        if (!accessToken) {
-            console.log("No access token available, skipping Spotify SDK initialization")
-            return
-        }
-        
-        const script = document.createElement("script")
-        script.src = "https://sdk.scdn.co/spotify-player.js"
-        script.async = true
-        script.onload = () => console.log("Spotify SDK script loaded")
-        document.body.appendChild(script)
-
-        window.onSpotifyWebPlaybackSDKReady = () => {
-            console.log("Spotify Web Playback SDK is ready")
-
-            const player = new window.Spotify.Player({
-                name: 'Web Playback SDK',
-                getOAuthToken: cb => { cb(accessToken) },
-                volume: 0.5
-            })
-
-            setPlayer(player)
-
-            player.addListener('initialization_error', ({ message }) => {
-                console.error('Failed to initialize', message)
-            })
-            player.addListener('authentication_error', ({ message }) => {
-                console.error('Failed to authenticate', message)
-            })
-            player.addListener('account_error', ({ message }) => {
-                console.error('Failed to validate Spotify account', message)
-            })
-            player.addListener('playback_error', ({ message }) => {
-                console.error('Failed to perform playback', message)
-            })
-
-            player.addListener('ready', ({ device_id }) => {
-                console.log('Ready with Device ID', device_id)
-                setDeviceID(device_id)
-                console.log('Set Device ID:', device_id)
-                fetchDeviceIDs()
-            })
-
-            player.addListener('not_ready', ({ device_id }) => {
-                console.log('Device ID has gone offline', device_id)
-            })
-
-            player.addListener('player_state_changed', (state) => {
-                if (!state) {
-                    return
-                }
-                setTrack(state.track_window.current_track)
-                setPaused(state.paused)
-                player.getCurrentState().then(state => {
-                    setActive(!!state)
-                })
-            })
-
-            player.connect().then(success => {
-                if (success) {
-                    console.log('The Web Playback SDK successfully connected to Spotify!')
-                } else {
-                    console.error('The Web Playback SDK failed to connect to Spotify.')
-                }
-            })
-        }
-    }, [accessToken])
-
-    useEffect(() => {
-        if (player && trackId && deviceID) {
-            console.log("Pausing player before playing new track")
-            player.pause().then(() => {
-                fetch(`https://api.spotify.com/v1/me/player/play`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ uris: [`spotify:track:${trackId}`] })
-                }).then(response => {
-                    if (response.ok) {
-                        console.log(`Playing track ID: ${trackId}`)
-                    } else {
-                        console.error('Failed to play track:', response)
-                    }
-                }).catch(err => {
-                    console.error('Error playing track:', err)
-                })
-            }).catch(err => {
-                console.error('Error pausing player:', err)
-            })
-        }
-    }, [player, trackId, deviceID, accessToken])
-
     const handlePlayerAction = (action) => {
         if (player) {
             player[action]().catch(err => {
                 console.error(`Error performing ${action}:`, err)
+                if (err.message && err.message.includes('no list was loaded')) {
+                    console.warn('💡 No track loaded in player. Please select a track first or make sure Spotify is playing something.')
+                    // Try to get current playback state and resume if possible
+                    fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            return response.json()
+                        }
+                        throw new Error('No current playback')
+                    }).then(data => {
+                        if (data && data.item) {
+                            console.log('Found current track, attempting to resume playback...')
+                            // Set the current track and try the action again
+                            setTrack(data.item)
+                            // Wait a moment then retry the action
+                            setTimeout(() => {
+                                player[action]().catch(retryErr => {
+                                    console.error(`Retry of ${action} also failed:`, retryErr)
+                                })
+                            }, 500)
+                        }
+                    }).catch(playbackErr => {
+                        console.warn('No current playback found:', playbackErr.message)
+                    })
+                }
             })
         } else {
             console.error('Player is not initialized')
@@ -372,7 +279,7 @@ function MusicPlayerSlider({ trackId }) {
     const transferPlayback = async () => {
         if (!deviceID) {
             console.error('No device ID available for transfer playback')
-            return
+            return Promise.reject('No device ID')
         }
 
         try {
@@ -389,12 +296,20 @@ function MusicPlayerSlider({ trackId }) {
             })
 
             if (!response.ok) {
-                throw new Error('Failed to transfer playback')
+                if (response.status === 404) {
+                    throw new Error('Premium account required for playback control. Please upgrade to Spotify Premium.')
+                }
+                throw new Error(`Transfer failed: ${response.status} ${response.statusText}`)
             }
 
-            console.log('Playback transferred successfully')
+            console.log('✅ Playback transferred to web player successfully')
+            return response
         } catch (error) {
-            console.error('Error transferring playback:', error)
+            console.error('❌ Transfer playback error:', error.message)
+            if (error.message.includes('404')) {
+                console.warn('💡 This feature requires Spotify Premium and an active device')
+            }
+            throw error
         }
     }
 
@@ -414,6 +329,22 @@ function MusicPlayerSlider({ trackId }) {
             </div>
             <div className="controls">
                 <button className="btn-spotify" onClick={transferPlayback}>Transfer Playback</button>
+                <button className="btn-spotify" onClick={() => {
+                    fetch('http://localhost:3000/auth/debug', { credentials: 'include' })
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log('🔍 Debug Info:', data);
+                        console.log('📋 User Info:', data.user);
+                        console.log('🔑 Endpoint Tests:', data.endpointTests);
+                        console.log('🎯 Account Type:', data.user?.product || 'Unknown');
+                    })
+                    .catch(e => console.error('Debug failed:', e));
+                }}>
+                    Debug Scopes
+                </button>
+                <div style={{marginTop: '10px', fontSize: '12px', color: deviceStatus === 'connected' ? 'green' : deviceStatus === 'disconnected' ? 'red' : 'orange'}}>
+                    Device Status: {deviceStatus === 'connected' ? '🟢 Connected' : deviceStatus === 'disconnected' ? '🔴 Offline' : '🟡 Connecting...'}
+                </div>
             </div>
         </div>
     )

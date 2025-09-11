@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AfterLogin from '../pages/AfterLogin'
 import BeforeLogin from '../pages/BeforeLogin'
-// import authService from '../api/authService'
+import { checkAuthStatus } from '../utils/auth'
 
 const LandingPageContent = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -9,19 +9,25 @@ const LandingPageContent = () => {
 
   useEffect(() => {
     // Check if user is already authenticated
-    const checkAuthStatus = async () => {
+    const handleAuthCheck = async () => {
       try {
-        // Check for access token in sessionStorage
-        const accessToken = sessionStorage.getItem('access_token')
-        setIsAuthenticated(!!accessToken)
+        const isAuth = await checkAuthStatus();
+        setIsAuthenticated(isAuth);
+        
+        // If login was successful, clean up the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('login') === 'success') {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       } catch (error) {
-        setIsAuthenticated(false)
+        console.error("Auth check failed:", error);
+        setIsAuthenticated(false);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    checkAuthStatus()
+    handleAuthCheck()
   }, [])
 
   if (loading) {

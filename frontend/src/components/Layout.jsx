@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import AppbarActual from './AppbarActual'
-import Sidebar from './SIdebar'
+import Sidebar from './Sidebar'
 import { Outlet } from 'react-router-dom'
 import { useState } from 'react'
 

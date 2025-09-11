@@ -6,15 +6,29 @@ import { Grid, Card, CardContent, CardMedia } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import './AlbumPage.css'
 import BeforeLogin from './BeforeLogin'
+import { getAccessToken } from '../utils/auth'
 
 const AlbumPage = () => {
-    const accessToken = sessionStorage.getItem('access_token')
+    const [accessToken, setAccessToken] = useState(null)
     const [album, setAlbum] = useState([])
     const [selectedAlbumId, setSelectedAlbumId] = useState('')
+    const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
+
+    // Fetch access token on component mount
+    useEffect(() => {
+        const fetchToken = async () => {
+            const token = await getAccessToken()
+            setAccessToken(token)
+            setLoading(false)
+        }
+        fetchToken()
+    }, [])
 
     useEffect(() => {
         const fetchAlbums = async () => {
+            if (!accessToken) return
+            
             try {
                 const response = await axios.get('https://api.spotify.com/v1/browse/new-releases', {
                     headers: {
@@ -27,9 +41,7 @@ const AlbumPage = () => {
             }
         }
 
-        if (accessToken) {
-            fetchAlbums()
-        }
+        fetchAlbums()
     }, [accessToken])
 
     const handleAlbumClick = (albumId) => {
@@ -38,15 +50,25 @@ const AlbumPage = () => {
         navigate('/albumItems', { state: { selectedAlbumId: albumId } }) 
     }
 
+    if (loading) {
+        return (
+            <Box className='albumBox'>
+                <Typography variant='h4' className='head'>
+                    Loading albums...
+                </Typography>
+            </Box>
+        )
+    }
+
     return (
         <>
-            {accessToken ? 
+            {accessToken ? (
                 <Box className='albumBox'>
                     <Typography variant='h4' className='head'>
                         Newly Released Albums 
                     </Typography>
                     <Grid container spacing={3} className='albumGrid'>
-                        {album.map((album, index) => (
+                        {album && album.length > 0 ? album.map((album, index) => (
                             <Grid item xs={3} key={index}>
                                 <div
                                     onClick={() => handleAlbumClick(album.id)}
@@ -56,7 +78,7 @@ const AlbumPage = () => {
                                         <CardMedia
                                             component='img'
                                             height='100'
-                                            image={album.images.length > 0 ? album.images[0].url : ''}
+                                            image={album.images && album.images.length > 0 ? album.images[0].url : 'https://via.placeholder.com/300x300/1db954/ffffff?text=No+Image'}
                                             alt='Album Cover'
                                         />
                                         <CardContent>
@@ -67,10 +89,16 @@ const AlbumPage = () => {
                                     </Card>
                                 </div>
                             </Grid>
-                        ))}
+                        )) : (
+                            <Grid item xs={12}>
+                                <Typography variant='body1' style={{textAlign: 'center', padding: '20px'}}>
+                                    No albums available. Please check your connection or try again later.
+                                </Typography>
+                            </Grid>
+                        )}
                     </Grid>
                 </Box>
-                : <BeforeLogin />}
+            ) : <BeforeLogin />}
         </>
     )
 }

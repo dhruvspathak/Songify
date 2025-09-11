@@ -3,19 +3,34 @@ import axios from 'axios'
 import { useLocation } from 'react-router-dom'
 import { Box, Grid, Card, CardContent, Typography} from '@mui/material'
 import './AlbumOnClick.css'
+import { getAccessToken } from '../utils/auth'
 
 const AlbumOnClick = () => {
     const location = useLocation()
     const { selectedAlbumId } = location.state || {}
 
     const [albumTracks, setAlbumTracks] = useState([])
+    const [accessToken, setAccessToken] = useState(null)
+    const [loading, setLoading] = useState(true)
+
+    // Fetch access token on component mount
+    useEffect(() => {
+        const fetchToken = async () => {
+            const token = await getAccessToken()
+            setAccessToken(token)
+            setLoading(false)
+        }
+        fetchToken()
+    }, [])
 
     useEffect(() => {
         const fetchAlbumTracks = async () => {
+            if (!accessToken || !selectedAlbumId) return
+            
             try {
                 const response = await axios.get(`https://api.spotify.com/v1/albums/${selectedAlbumId}/tracks`, {
                     headers: {
-                        'Authorization': `Bearer ${sessionStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${accessToken}`
                     }
                 })
                 setAlbumTracks(response.data.items)
@@ -24,10 +39,8 @@ const AlbumOnClick = () => {
             }
         }
 
-        if (selectedAlbumId) {
-            fetchAlbumTracks()
-        }
-    }, [selectedAlbumId])
+        fetchAlbumTracks()
+    }, [selectedAlbumId, accessToken])
 
     return (
         <Box className='AlbumBox'>

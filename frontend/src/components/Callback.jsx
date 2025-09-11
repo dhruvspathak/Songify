@@ -1,12 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Callback = () => {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const hasProcessedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasProcessedRef.current || isProcessing) {
+      return;
+    }
+
     const handleCallback = async () => {
+      // Mark as processing to prevent duplicate calls
+      hasProcessedRef.current = true;
+      setIsProcessing(true);
+
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
       const state = urlParams.get('state');
@@ -24,8 +35,7 @@ const Callback = () => {
         return;
       }
 
-        try {
-        const redirectUri = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+      try {
         console.log('Sending auth callback request...');
         const response = await fetch('http://localhost:3000/auth/callback', {
           method: 'POST',
@@ -48,16 +58,20 @@ const Callback = () => {
 
         // Clear state from storage and redirect with success
         localStorage.removeItem('spotify_auth_state');
-        navigate('/?login=success');
+        
+        // Trigger a page reload to refresh authentication state
+        window.location.href = '/?login=success';
       } catch (error) {
         console.error('Authentication error:', error.message);
         setError(error.message);
         setTimeout(() => navigate('/'), 3000);
+      } finally {
+        setIsProcessing(false);
       }
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, isProcessing]);
 
   return (
     <div className="callback-container">
@@ -68,7 +82,7 @@ const Callback = () => {
         </div>
       ) : (
         <div className="loading-message">
-          Processing authentication...
+          {isProcessing ? 'Processing authentication...' : 'Initializing...'}
         </div>
       )}
     </div>
