@@ -8,16 +8,26 @@ import InputBase from '@mui/material/InputBase'
 import SearchIcon from '@mui/icons-material/Search'
 import { Typography, MenuItem, Menu, Tooltip } from '@mui/material'
 import { Link } from 'react-router-dom'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import axios from 'axios'
 import './AppbarActual.css'
+import { getAccessToken } from '../utils/auth'
 
 const AppbarActual = ({ handleLogin, setTrackId }) => {
     const [songResults, setSongResults] = useState([])
     const [albumResults, setAlbumResults] = useState([])
     const [artistResults, setArtistResults] = useState([])
     const [anchorEl, setAnchorEl] = useState(null)
-    const accessToken = sessionStorage.getItem('access_token')
+    const [accessToken, setAccessToken] = useState(null)
+
+    // Fetch access token on component mount
+    useEffect(() => {
+        const fetchToken = async () => {
+            const token = await getAccessToken()
+            setAccessToken(token)
+        }
+        fetchToken()
+    }, [])
 
     const Search = styled('div')(({ theme }) => ({
         position: 'relative',

@@ -12,6 +12,43 @@ dist
 dist-ssr
 *.local
 
+# Additional build output
+build/
+
+# Vite
+.vite/
+
+# Static files
+public/vite.svg
+
+# Environment variables (CRITICAL: Never commit secrets!)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Spotify OAuth & Development
+*.secret
+*.key
+
+# Backup files & temporary files
+*.bak
+*.tmp
+*.backup
+*.old
+*.new
+Thumbs.db
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
