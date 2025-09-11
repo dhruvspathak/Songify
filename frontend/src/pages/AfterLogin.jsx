@@ -18,6 +18,29 @@ const AfterLogin = () => {
     useEffect(() => {
         const fetchFeaturedPlaylists = async () => {
             try {
+                // Check if we're in demo mode
+                if (accessToken === 'demo_token') {
+                    // Set demo playlists for UI testing
+                    setPlaylists([
+                        {
+                            id: 'demo1',
+                            name: 'Demo Playlist 1',
+                            images: [{ url: 'https://via.placeholder.com/300x300/1db954/ffffff?text=Demo+Playlist' }]
+                        },
+                        {
+                            id: 'demo2', 
+                            name: 'Demo Playlist 2',
+                            images: [{ url: 'https://via.placeholder.com/300x300/1db954/ffffff?text=Demo+Playlist' }]
+                        },
+                        {
+                            id: 'demo3',
+                            name: 'Demo Playlist 3', 
+                            images: [{ url: 'https://via.placeholder.com/300x300/1db954/ffffff?text=Demo+Playlist' }]
+                        }
+                    ])
+                    return
+                }
+
                 const response = await axios.get('https://api.spotify.com/v1/browse/featured-playlists', {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`
@@ -28,6 +51,14 @@ const AfterLogin = () => {
                 setPlaylists(fetchedPlaylists)
             } catch (err) {
                 console.log('Error fetching featured playlists:', err)
+                // If API fails, show demo content
+                setPlaylists([
+                    {
+                        id: 'error1',
+                        name: 'API Error - Demo Mode',
+                        images: [{ url: 'https://via.placeholder.com/300x300/ff0000/ffffff?text=API+Error' }]
+                    }
+                ])
             }
         }
 

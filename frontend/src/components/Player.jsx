@@ -211,11 +211,25 @@ import PropTypes from 'prop-types'
 function MusicPlayerSlider({ trackId }) {
     const accessToken = sessionStorage.getItem('access_token')
     const track = {
-        name: "",
+        name: "No track selected",
         album: {
             images: [{ url: "" }]
         },
-        artists: [{ name: "" }]
+        artists: [{ name: "Please select a track" }]
+    }
+    
+    // Don't initialize player if no access token or trackId
+    if (!accessToken) {
+        return (
+            <div className="container">
+                <div className="main-wrapper">
+                    <div className="now-playing__side">
+                        <div className="now-playing__name">Please log in to play music</div>
+                        <div className="now-playing__artist">Spotify login required</div>
+                    </div>
+                </div>
+            </div>
+        )
     }
     const [player, setPlayer] = useState(undefined)
     const [deviceID, setDeviceID] = useState(null)
@@ -251,6 +265,12 @@ function MusicPlayerSlider({ trackId }) {
     }
 
     useEffect(() => {
+        // Only load Spotify SDK if we have a valid access token
+        if (!accessToken) {
+            console.log("No access token available, skipping Spotify SDK initialization")
+            return
+        }
+        
         const script = document.createElement("script")
         script.src = "https://sdk.scdn.co/spotify-player.js"
         script.async = true
@@ -311,7 +331,7 @@ function MusicPlayerSlider({ trackId }) {
                 }
             })
         }
-    }, [])
+    }, [accessToken])
 
     useEffect(() => {
         if (player && trackId && deviceID) {
@@ -400,7 +420,7 @@ function MusicPlayerSlider({ trackId }) {
 }
 
 MusicPlayerSlider.propTypes = {
-    trackId: PropTypes.string.isRequired
+    trackId: PropTypes.string
 }
 
 export default MusicPlayerSlider

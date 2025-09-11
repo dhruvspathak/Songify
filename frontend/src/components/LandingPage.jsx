@@ -8,12 +8,12 @@ const LandingPageContent = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is already authenticated via secure backend
+    // Check if user is already authenticated
     const checkAuthStatus = async () => {
       try {
-        // const user = await authService.getCurrentUser()
-        // setIsAuthenticated(!!user)
-        setIsAuthenticated(false) // Temporary for testing
+        // Check for access token in sessionStorage
+        const accessToken = sessionStorage.getItem('access_token')
+        setIsAuthenticated(!!accessToken)
       } catch (error) {
         setIsAuthenticated(false)
       } finally {

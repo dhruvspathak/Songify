@@ -27,7 +27,7 @@ const Sidebar = ({ trackId }) => {
 }
 
 Sidebar.propTypes = {
-    trackId: PropTypes.string.isRequired,
+    trackId: PropTypes.string,
 }
 
 export default Sidebar
