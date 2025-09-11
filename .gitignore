@@ -32,6 +32,17 @@ frontend/.env
 *.secret
 *.key
 
+# Containers & Production
+.env.production
+.env.staging
+docker-compose.override.yml
+podman-compose.override.yml
+traefik-data/
+redis-data/
+prometheus-data/
+backend-logs/
+.podman/
+
 # Backup files & temporary files
 *.bak
 *.tmp

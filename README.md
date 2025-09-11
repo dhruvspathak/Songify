@@ -78,6 +78,41 @@ npm run dev
 
 Visit `http://localhost:5173` to use the app!
 
+## 🦭 Podman Deployment (Alternative)
+
+For a containerized deployment with production-ready features using Podman:
+
+### Quick Podman Setup
+```bash
+# Clone and navigate to project
+git clone <your-repo-url>
+cd songify
+
+# Set up environment files
+cp backend/env.template backend/.env
+cp frontend/env.template frontend/.env
+# Edit .env files with your Spotify credentials
+
+# Deploy with Podman
+./scripts/deploy.sh development
+# Or on Windows: scripts\deploy.bat development
+```
+
+### Podman Features
+- 🦭 **Rootless containers** - Better security, no daemon
+- 🔒 **Production-ready** with SSL, security headers, and monitoring
+- 📊 **Health checks** and automatic restarts
+- 🚀 **Horizontal scaling** support
+- 🗄️ **Redis session storage** for production
+- 📈 **Traefik reverse proxy** with automatic SSL
+- ⚡ **Drop-in Docker replacement** with better performance
+
+**Access URLs:**
+- Frontend: http://localhost
+- Backend API: http://localhost:3000
+
+For detailed Podman documentation, see [docker/README.md](docker/README.md).
+
 ## 🏗️ Project Structure
 
 ```
