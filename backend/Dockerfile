@@ -1,5 +1,5 @@
 # Production Containerfile for Songify Backend (Podman compatible)
-FROM node:18-alpine AS base
+FROM amd64/node:22.15.1-alpine3.21 AS base
 
 # Set working directory
 WORKDIR /app

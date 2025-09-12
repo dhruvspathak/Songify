@@ -3,9 +3,61 @@ version: '3.8'
 # Podman Compose compatible configuration
 
 services:
-  # Reverse Proxy with SSL termination
+  # Docker Socket Proxy for Security - HARDENED
+  dockerproxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: songify-dockerproxy
+    restart: unless-stopped
+    environment:
+      # MINIMAL Security: Only essential Docker API endpoints
+      CONTAINERS: 1        # Required for container discovery
+      SERVICES: 0          # Disabled - not needed
+      SWARM: 0             # Disabled
+      NODES: 0             # Disabled  
+      NETWORKS: 0          # Disabled - reduces attack surface
+      TASKS: 0             # Disabled
+      # ALL dangerous endpoints explicitly disabled
+      POST: 0              # No container creation
+      BUILD: 0             # No image building
+      COMMIT: 0            # No container commits
+      CONFIGS: 0           # No config access
+      DISTRIBUTION: 0      # No distribution access
+      EXEC: 0              # No command execution
+      IMAGES: 0            # No image management
+      INFO: 0              # No system info
+      PLUGINS: 0           # No plugin access
+      SECRETS: 0           # No secrets access
+      SESSION: 0           # No session management
+      SYSTEM: 0            # No system commands
+      VERSION: 0           # No version info
+      VOLUMES: 0           # No volume management
+      # Additional restrictions
+      ALLOW_RESTARTS: 0    # No container restarts
+      ALLOW_START: 0       # No container starting
+      ALLOW_STOP: 0        # No container stopping
+    volumes:
+      # This is the ONLY place docker.sock is mounted - SECURED
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dockerproxy-network
+    # Enhanced container security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,nodev,size=32m
+    deploy:
+      resources:
+        limits:
+          memory: 64M        # More restrictive
+          cpus: '0.05'       # More restrictive
+        reservations:
+          memory: 32M
+          cpus: '0.01'
+
+  # Reverse Proxy with SSL termination (Secured)
   traefik:
-    image: traefik:v3.0
+    image: traefik:3.5.1
     container_name: songify-traefik
     restart: unless-stopped
     command:
@@ -13,25 +65,35 @@ services:
       - "--api.insecure=false"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      # Connect to Docker via proxy instead of direct socket
+      - "--providers.docker.endpoint=tcp://dockerproxy:2375"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--log.level=INFO"
+      # Security headers
+      - "--api.middleware=auth"
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"  # Traefik dashboard
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # NO MORE DOCKER SOCKET! Only certificates
       - traefik-letsencrypt:/letsencrypt
     networks:
       - songify-network
+      - dockerproxy-network
+    depends_on:
+      - dockerproxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      # Add basic auth for dashboard security
+      - "traefik.http.routers.traefik.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_AUTH:-admin:$$2y$$10$$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi}"
 
   # Songify Backend with production optimizations
   backend:
@@ -171,6 +233,10 @@ networks:
   songify-network:
     driver: bridge
     name: songify-network
+  dockerproxy-network:
+    driver: bridge
+    name: songify-dockerproxy-network
+    internal: true  # Prevent external access to docker proxy
 
 volumes:
   backend-logs:

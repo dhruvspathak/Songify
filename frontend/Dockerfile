@@ -1,5 +1,5 @@
 # Multi-stage Containerfile for Songify Frontend (Podman compatible)
-FROM node:18-alpine AS builder
+FROM amd64/node:22.15.1-alpine3.21 AS builder
 
 # Set working directory
 WORKDIR /app
