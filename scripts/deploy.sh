@@ -89,7 +89,7 @@ for i in {1..30}; do
     fi
     if [ $i -eq 30 ]; then
         echo -e "${RED}❌ Backend health check failed${NC}"
-        docker-compose -f $COMPOSE_FILE logs backend
+        podman-compose -f $COMPOSE_FILE logs backend
         exit 1
     fi
     sleep 2
@@ -97,13 +97,13 @@ done
 
 # Wait for frontend health
 for i in {1..30}; do
-    if curl -s http://localhost/health > /dev/null 2>&1 || curl -s http://localhost/ > /dev/null 2>&1; then
+    if curl -s http://localhost:8080/health > /dev/null 2>&1 || curl -s http://localhost:8080/ > /dev/null 2>&1; then
         echo -e "${GREEN}✅ Frontend is healthy${NC}"
         break
     fi
     if [ $i -eq 30 ]; then
         echo -e "${RED}❌ Frontend health check failed${NC}"
-        docker-compose -f $COMPOSE_FILE logs frontend
+        podman-compose -f $COMPOSE_FILE logs frontend
         exit 1
     fi
     sleep 2
@@ -122,7 +122,7 @@ if [ "$ENVIRONMENT" = "production" ]; then
     echo -e "  Backend API: ${GREEN}https://api.${DOMAIN:-yourdomain.com}${NC}"
     echo -e "  Traefik Dashboard: ${GREEN}https://traefik.${DOMAIN:-yourdomain.com}${NC}"
 else
-    echo -e "  Frontend: ${GREEN}http://localhost${NC}"
+    echo -e "  Frontend: ${GREEN}http://localhost:8080${NC}"
     echo -e "  Backend API: ${GREEN}http://localhost:3000${NC}"
     echo -e "  Backend Health: ${GREEN}http://localhost:3000/health${NC}"
 fi
