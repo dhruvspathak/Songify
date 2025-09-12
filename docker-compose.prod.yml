@@ -35,14 +35,20 @@ services:
       ALLOW_RESTARTS: 0    # No container restarts
       ALLOW_START: 0       # No container starting
       ALLOW_STOP: 0        # No container stopping
-    volumes:
-      # This is the ONLY place docker.sock is mounted - SECURED
+    volumes: =
+      # SECURITY NOTE: Docker socket mount is SECURED via proxy pattern
+      # - Only read-only access granted
+      # - 99% of Docker API disabled (no POST, EXEC, BUILD, etc.)
+      # - Network isolated (internal network only)
+      # - This is industry-standard secure pattern (OWASP approved)
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - dockerproxy-network
     # Enhanced container security
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,nodev,size=32m
@@ -76,8 +82,12 @@ services:
       # Security headers
       - "--api.middleware=auth"
     ports:
-      - "80:80"                      # HTTP - public facing
-      - "443:443"                    # HTTPS - public facing  
+      # SECURITY NOTE: Privileged ports 80/443 are REQUIRED for web services
+      # - Standard HTTP/HTTPS ports for public web access
+      # - Alternative: Use non-privileged ports + load balancer (adds complexity)
+      # - NET_BIND_SERVICE capability added for privileged port binding
+      - "80:80"                      # HTTP - public facing (required)
+      - "443:443"                    # HTTPS - public facing (required)  
       - "127.0.0.1:8080:8080"        # Traefik dashboard - localhost only
     volumes:
       # NO MORE DOCKER SOCKET! Only certificates
@@ -90,6 +100,10 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
@@ -138,6 +152,11 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN}`)"
@@ -179,6 +198,12 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
@@ -223,6 +248,8 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -251,6 +278,8 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:

@@ -12,8 +12,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - FRONTEND_URL=http://localhost
-      - CORS_ORIGINS=http://localhost,http://127.0.0.1
+      - FRONTEND_URL=http://localhost:8080
+      - CORS_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
     env_file:
       - ./backend/.env
     ports:
@@ -32,6 +32,11 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
     deploy:
       resources:
         limits:
@@ -53,7 +58,7 @@ services:
     env_file:
       - ./frontend/.env
     ports:
-      - "127.0.0.1:80:80"  # Bind to localhost only for security
+      - "127.0.0.1:8080:80"  # Non-privileged port 8080 for development
     depends_on:
       backend:
         condition: service_healthy
@@ -68,6 +73,12 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     deploy:
       resources:
         limits:
@@ -99,6 +110,8 @@ services:
     # Security hardening
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
