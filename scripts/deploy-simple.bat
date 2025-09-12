@@ -68,7 +68,7 @@ podman build -t songify-frontend ./frontend
 podman run -d ^
   --name songify-frontend ^
   --network songify-network ^
-  -p 80:80 ^
+  -p 8080:8080 ^
   --env-file frontend\.env ^
   songify-frontend
 
@@ -85,7 +85,7 @@ if errorlevel 1 (
     echo ✅ Backend is healthy
 )
 
-curl -s http://localhost/ >nul 2>&1
+curl -s http://localhost:8080/ >nul 2>&1
 if errorlevel 1 (
     echo ⚠️  Frontend may still be starting...
 ) else (
@@ -99,7 +99,7 @@ podman ps --filter name=songify
 echo.
 echo 🎉 Deployment completed!
 echo 📍 Access URLs:
-echo   Frontend: http://localhost
+echo   Frontend: http://localhost:8080
 echo   Backend API: http://localhost:3000
 echo.
 echo 📝 Useful commands:

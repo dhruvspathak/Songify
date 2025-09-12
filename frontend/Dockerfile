@@ -28,14 +28,12 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copy built app from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Add non-root user and create required directories
+# Add non-root user and setup permissions
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S songify -u 1001 && \
-    mkdir -p /tmp/nginx /var/cache/nginx /var/log/nginx && \
-    chmod 755 /usr/share/nginx/html && \
-    chmod 755 /var/cache/nginx && \
-    chmod 755 /var/log/nginx && \
-    chmod 755 /tmp/nginx
+    mkdir -p /tmp/nginx /var/cache/nginx /var/log/nginx /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp && \
+    chown -R songify:nodejs /tmp/nginx /var/cache/nginx /var/log/nginx && \
+    chmod -R 755 /usr/share/nginx/html
 
 # Switch to non-root user
 USER songify

@@ -74,7 +74,7 @@ if errorlevel 1 (
     echo ✅ Backend is healthy
 )
 
-curl -s http://localhost/ >nul 2>&1
+curl -s http://localhost:8080/ >nul 2>&1
 if errorlevel 1 (
     echo ⚠️  Frontend may still be starting...
 ) else (
@@ -92,7 +92,7 @@ if "%ENVIRONMENT%"=="production" (
     echo   Frontend: https://%DOMAIN%
     echo   Backend API: https://api.%DOMAIN%
 ) else (
-    echo   Frontend: http://localhost
+    echo   Frontend: http://localhost:8080
     echo   Backend API: http://localhost:3000
 )
 

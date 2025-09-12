@@ -2,15 +2,15 @@ pipeline {
     agent any
     
     environment {
-        // Docker Hub credentials - configure these in Jenkins credentials
+        // Container Registry credentials - configure these in Jenkins credentials  
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_REGISTRY = 'docker.io'
+        CONTAINER_REGISTRY = 'docker.io'
         IMAGE_NAME_FRONTEND = 'songify-frontend'
         IMAGE_NAME_BACKEND = 'songify-backend'
         
         // Build configuration
         NODE_VERSION = '18'
-        DOCKER_BUILDKIT = '1'
+        BUILDAH_FORMAT = 'docker'  // Use Docker format for compatibility
         
         // Environment-specific settings
         FRONTEND_PORT = '80'
@@ -23,8 +23,8 @@ pipeline {
     options {
         // Keep builds for 30 days or last 10 builds
         buildDiscarder(logRotator(daysToKeepStr: '30', numToKeepStr: '10'))
-        // Timeout the build after 10 minutes
-        timeout(time: 10, unit: 'MINUTES')
+        // Timeout the build after 30 minutes
+        timeout(time: 30, unit: 'MINUTES')
         // Skip default checkout to use custom checkout
         skipDefaultCheckout()
     }
@@ -83,23 +83,23 @@ pipeline {
                     
                     // Create environment template files if they don't exist
                     if (isUnix()) {
-                        sh '''
-                            # Create .env templates for build process
-                            if [ ! -f backend/.env ]; then
-                                echo "Creating backend .env from template..."
-                                cp backend/env.template backend/.env || echo "No backend env template found"
-                            fi
-                            
-                            if [ ! -f frontend/.env ]; then
-                                echo "Creating frontend .env from template..."
-                                cp frontend/env.template frontend/.env || echo "No frontend env template found"
-                            fi
-                            
-                            # Display project structure
-                            echo "Project structure:"
-                            find . -type f -name "package.json" | head -10
-                            find . -type f -name "Dockerfile" | head -10
-                        '''
+                    sh '''
+                        # Create .env templates for build process
+                        if [ ! -f backend/.env ]; then
+                            echo "Creating backend .env from template..."
+                            cp backend/env.template backend/.env || echo "No backend env template found"
+                        fi
+                        
+                        if [ ! -f frontend/.env ]; then
+                            echo "Creating frontend .env from template..."
+                            cp frontend/env.template frontend/.env || echo "No frontend env template found"
+                        fi
+                        
+                        # Display project structure
+                        echo "Project structure:"
+                        find . -type f -name "package.json" | head -10
+                        find . -type f -name "Dockerfile" | head -10
+                    '''
                     } else {
                         bat '''
                             @echo off
@@ -132,28 +132,28 @@ pipeline {
                             script {
                                 echo "Installing backend dependencies and running tests..."
                                 if (isUnix()) {
-                                    sh '''
-                                        # Install Node.js dependencies
-                                        npm ci --only=dev
-                                        
-                                        # Run linting if available
-                                        if npm list eslint &>/dev/null; then
-                                            echo "Running ESLint..."
-                                            npm run lint || echo "Linting failed but continuing..."
-                                        fi
-                                        
-                                        # Run tests if available
-                                        if grep -q '"test"' package.json && ! grep -q 'echo.*Error.*no test' package.json; then
-                                            echo "Running backend tests..."
-                                            npm test
-                                        else
-                                            echo "No tests configured for backend"
-                                        fi
-                                        
-                                        # Security audit
-                                        echo "Running security audit..."
-                                        npm audit --audit-level high || echo "Security audit completed with warnings"
-                                    '''
+                                sh '''
+                                    # Install Node.js dependencies
+                                    npm ci --only=dev
+                                    
+                                    # Run linting if available
+                                    if npm list eslint &>/dev/null; then
+                                        echo "Running ESLint..."
+                                        npm run lint || echo "Linting failed but continuing..."
+                                    fi
+                                    
+                                    # Run tests if available
+                                    if grep -q '"test"' package.json && ! grep -q 'echo.*Error.*no test' package.json; then
+                                        echo "Running backend tests..."
+                                        npm test
+                                    else
+                                        echo "No tests configured for backend"
+                                    fi
+                                    
+                                    # Security audit
+                                    echo "Running security audit..."
+                                    npm audit --audit-level high || echo "Security audit completed with warnings"
+                                '''
                                 } else {
                                     bat '''
                                         @echo off
@@ -196,32 +196,32 @@ pipeline {
                             script {
                                 echo "Installing frontend dependencies and running tests..."
                                 if (isUnix()) {
-                                    sh '''
-                                        # Install Node.js dependencies
-                                        npm ci
-                                        
-                                        # Run linting
-                                        if npm list eslint &>/dev/null; then
-                                            echo "Running ESLint..."
-                                            npm run lint || echo "Linting failed but continuing..."
-                                        fi
-                                        
-                                        # Run tests if available
-                                        if grep -q '"test"' package.json && ! grep -q 'echo.*Error.*no test' package.json; then
-                                            echo "Running frontend tests..."
-                                            npm test
-                                        else
-                                            echo "No tests configured for frontend"
-                                        fi
-                                        
-                                        # Build frontend to verify it compiles
-                                        echo "Building frontend for verification..."
-                                        npm run build
-                                        
-                                        # Security audit
-                                        echo "Running security audit..."
-                                        npm audit --audit-level high || echo "Security audit completed with warnings"
-                                    '''
+                                sh '''
+                                    # Install Node.js dependencies
+                                    npm ci
+                                    
+                                    # Run linting
+                                    if npm list eslint &>/dev/null; then
+                                        echo "Running ESLint..."
+                                        npm run lint || echo "Linting failed but continuing..."
+                                    fi
+                                    
+                                    # Run tests if available
+                                    if grep -q '"test"' package.json && ! grep -q 'echo.*Error.*no test' package.json; then
+                                        echo "Running frontend tests..."
+                                        npm test
+                                    else
+                                        echo "No tests configured for frontend"
+                                    fi
+                                    
+                                    # Build frontend to verify it compiles
+                                    echo "Building frontend for verification..."
+                                    npm run build
+                                    
+                                    # Security audit
+                                    echo "Running security audit..."
+                                    npm audit --audit-level high || echo "Security audit completed with warnings"
+                                '''
                                 } else {
                                     bat '''
                                         @echo off
@@ -263,43 +263,45 @@ pipeline {
             }
         }
         
-        stage('Build Docker Images') {
+        stage('Build Container Images') {
             parallel {
                 stage('Build Backend Image') {
                     steps {
                         dir('backend') {
                             script {
-                                echo "Building backend Docker image..."
+                                echo "Building backend container image with Podman..."
                                 if (isUnix()) {
-                                    sh """
-                                        # Build backend image
-                                        docker build \\
-                                            --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG} \\
-                                            --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.ADDITIONAL_TAG} \\
-                                            --label "build.number=${env.BUILD_NUMBER}" \\
-                                            --label "build.branch=${env.BRANCH_NAME ?: 'unknown'}" \\
-                                            --label "build.commit=${env.GIT_COMMIT ?: 'unknown'}" \\
-                                            --label "build.date=\$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \\
-                                            .
-                                        
-                                        # Verify image was created
-                                        docker images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}
+                                sh """
+                                        # Build backend image with Podman
+                                        podman build \\
+                                        --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG} \\
+                                        --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.ADDITIONAL_TAG} \\
+                                        --label "build.number=${env.BUILD_NUMBER}" \\
+                                        --label "build.branch=${env.BRANCH_NAME ?: 'unknown'}" \\
+                                        --label "build.commit=${env.GIT_COMMIT ?: 'unknown'}" \\
+                                        --label "build.date=\$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \\
+                                            --format=docker \\
+                                        .
+                                    
+                                    # Verify image was created
+                                        podman images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}
                                     """
                                 } else {
                                     bat """
                                         @echo off
-                                        REM Build backend image
-                                        docker build ^
+                                        REM Build backend image with Podman
+                                        podman build ^
                                             --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG} ^
                                             --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.ADDITIONAL_TAG} ^
                                             --label "build.number=${env.BUILD_NUMBER}" ^
                                             --label "build.branch=${env.BRANCH_NAME ?: 'unknown'}" ^
                                             --label "build.commit=${env.GIT_COMMIT ?: 'unknown'}" ^
                                             --label "build.date=%date:~10,4%-%date:~4,2%-%date:~7,2%T%time:~0,2%:%time:~3,2%:%time:~6,2%Z" ^
+                                            --format=docker ^
                                             .
                                         
                                         REM Verify image was created
-                                        docker images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}
+                                        podman images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}
                                     """
                                 }
                             }
@@ -311,37 +313,39 @@ pipeline {
                     steps {
                         dir('frontend') {
                             script {
-                                echo "Building frontend Docker image..."
+                                echo "Building frontend container image with Podman..."
                                 if (isUnix()) {
-                                    sh """
-                                        # Build frontend image
-                                        docker build \\
-                                            --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG} \\
-                                            --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.ADDITIONAL_TAG} \\
-                                            --label "build.number=${env.BUILD_NUMBER}" \\
-                                            --label "build.branch=${env.BRANCH_NAME ?: 'unknown'}" \\
-                                            --label "build.commit=${env.GIT_COMMIT ?: 'unknown'}" \\
-                                            --label "build.date=\$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \\
-                                            .
-                                        
-                                        # Verify image was created
-                                        docker images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}
+                                sh """
+                                        # Build frontend image with Podman
+                                        podman build \\
+                                        --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG} \\
+                                        --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.ADDITIONAL_TAG} \\
+                                        --label "build.number=${env.BUILD_NUMBER}" \\
+                                        --label "build.branch=${env.BRANCH_NAME ?: 'unknown'}" \\
+                                        --label "build.commit=${env.GIT_COMMIT ?: 'unknown'}" \\
+                                        --label "build.date=\$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \\
+                                            --format=docker \\
+                                        .
+                                    
+                                    # Verify image was created
+                                        podman images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}
                                     """
                                 } else {
                                     bat """
                                         @echo off
-                                        REM Build frontend image
-                                        docker build ^
+                                        REM Build frontend image with Podman
+                                        podman build ^
                                             --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG} ^
                                             --tag ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.ADDITIONAL_TAG} ^
                                             --label "build.number=${env.BUILD_NUMBER}" ^
                                             --label "build.branch=${env.BRANCH_NAME ?: 'unknown'}" ^
                                             --label "build.commit=${env.GIT_COMMIT ?: 'unknown'}" ^
-                                            --label "build.date=%date:~10,4%-%date:~4,2%-%date:~7,2%T%time:~0,2%:%time:~3,2%:%time:~6,2%Z" ^
+                                            --label "build.date=%date:~10,4%-%date:~4,2%-%date:~7,2%T%time:~0,2%:%time:~6,2%Z" ^
+                                            --format=docker ^
                                             .
                                         
                                         REM Verify image was created
-                                        docker images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}
+                                        podman images ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}
                                     """
                                 }
                             }
@@ -351,60 +355,60 @@ pipeline {
             }
         }
         
-        stage('Test Docker Images') {
+        stage('Test Container Images') {
             steps {
                 script {
-                    echo "Testing Docker images..."
+                    echo "Testing container images with Podman..."
                     if (isUnix()) {
-                        sh """
-                            # Test backend image
-                            echo "Testing backend image..."
-                            docker run --rm --name test-backend -d \\
-                                -p 3001:3000 \\
-                                ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
-                            
-                            # Wait for backend to start
-                            sleep 10
-                            
-                            # Basic health check for backend
-                            if docker ps | grep test-backend; then
-                                echo "Backend container is running"
-                                docker stop test-backend || true
-                            else
-                                echo "Backend container failed to start"
-                                docker logs test-backend || true
-                                docker stop test-backend || true
-                                exit 1
-                            fi
-                            
-                            # Test frontend image
-                            echo "Testing frontend image..."
-                            docker run --rm --name test-frontend -d \\
-                                -p 8081:80 \\
-                                ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
-                            
-                            # Wait for frontend to start
-                            sleep 5
-                            
-                            # Basic health check for frontend
-                            if docker ps | grep test-frontend; then
-                                echo "Frontend container is running"
-                                docker stop test-frontend || true
-                            else
-                                echo "Frontend container failed to start"
-                                docker logs test-frontend || true
-                                docker stop test-frontend || true
-                                exit 1
-                            fi
-                            
-                            echo "All Docker images tested successfully"
+                    sh """
+                            # Test backend image with Podman
+                        echo "Testing backend image..."
+                            podman run --rm --name test-backend -d \\
+                            -p 3001:3000 \\
+                            ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
+                        
+                        # Wait for backend to start
+                        sleep 10
+                        
+                        # Basic health check for backend
+                            if podman ps | grep test-backend; then
+                            echo "Backend container is running"
+                                podman stop test-backend || true
+                        else
+                            echo "Backend container failed to start"
+                                podman logs test-backend || true
+                                podman stop test-backend || true
+                            exit 1
+                        fi
+                        
+                        # Test frontend image
+                        echo "Testing frontend image..."
+                            podman run --rm --name test-frontend -d \\
+                            -p 8081:80 \\
+                            ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
+                        
+                        # Wait for frontend to start
+                        sleep 5
+                        
+                        # Basic health check for frontend
+                            if podman ps | grep test-frontend; then
+                            echo "Frontend container is running"
+                                podman stop test-frontend || true
+                        else
+                            echo "Frontend container failed to start"
+                                podman logs test-frontend || true
+                                podman stop test-frontend || true
+                            exit 1
+                        fi
+                        
+                            echo "All container images tested successfully"
                         """
                     } else {
                         bat """
                             @echo off
-                            REM Test backend image
+                            REM Test backend image with Podman
                             echo Testing backend image...
-                            docker run --rm --name test-backend -d ^
+                            podman run --rm --name test-backend -d ^
                                 -p 3001:3000 ^
                                 ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
                             
@@ -412,20 +416,20 @@ pipeline {
                             timeout /t 10 /nobreak >nul
                             
                             REM Basic health check for backend
-                            docker ps | findstr test-backend >nul 2>&1
+                            podman ps | findstr test-backend >nul 2>&1
                             if not errorlevel 1 (
                                 echo Backend container is running
-                                docker stop test-backend 2>nul || echo Container already stopped
+                                podman stop test-backend 2>nul || echo Container already stopped
                             ) else (
                                 echo Backend container failed to start
-                                docker logs test-backend 2>nul || echo No logs available
-                                docker stop test-backend 2>nul || echo Container already stopped
+                                podman logs test-backend 2>nul || echo No logs available
+                                podman stop test-backend 2>nul || echo Container already stopped
                                 exit /b 1
                             )
                             
-                            REM Test frontend image
+                            REM Test frontend image with Podman
                             echo Testing frontend image...
-                            docker run --rm --name test-frontend -d ^
+                            podman run --rm --name test-frontend -d ^
                                 -p 8081:80 ^
                                 ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
                             
@@ -433,25 +437,25 @@ pipeline {
                             timeout /t 5 /nobreak >nul
                             
                             REM Basic health check for frontend
-                            docker ps | findstr test-frontend >nul 2>&1
+                            podman ps | findstr test-frontend >nul 2>&1
                             if not errorlevel 1 (
                                 echo Frontend container is running
-                                docker stop test-frontend 2>nul || echo Container already stopped
+                                podman stop test-frontend 2>nul || echo Container already stopped
                             ) else (
                                 echo Frontend container failed to start
-                                docker logs test-frontend 2>nul || echo No logs available
-                                docker stop test-frontend 2>nul || echo Container already stopped
+                                podman logs test-frontend 2>nul || echo No logs available
+                                podman stop test-frontend 2>nul || echo Container already stopped
                                 exit /b 1
                             )
                             
-                            echo All Docker images tested successfully
+                            echo All container images tested successfully
                         """
                     }
                 }
             }
         }
         
-        stage('Push to Docker Hub') {
+        stage('Push to Container Registry') {
             when {
                 anyOf {
                     branch 'main'
@@ -462,43 +466,43 @@ pipeline {
             }
             steps {
                 script {
-                    echo "Pushing images to Docker Hub..."
+                    echo "Pushing images to Container Registry..."
                     if (isUnix()) {
-                        sh """
-                            # Login to Docker Hub
-                            echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
-                            
-                            # Push backend images
-                            echo "Pushing backend images..."
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.ADDITIONAL_TAG}
-                            
-                            # Push frontend images
-                            echo "Pushing frontend images..."
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.ADDITIONAL_TAG}
-                            
-                            echo "All images pushed successfully to Docker Hub"
-                            echo "Backend: ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}"
-                            echo "Frontend: ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}"
-                        """
+                    sh """
+                            # Login to Container Registry with Podman
+                            echo ${DOCKERHUB_CREDENTIALS_PSW} | podman login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin ${CONTAINER_REGISTRY}
+                        
+                        # Push backend images
+                        echo "Pushing backend images..."
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.ADDITIONAL_TAG}
+                        
+                        # Push frontend images
+                        echo "Pushing frontend images..."
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.ADDITIONAL_TAG}
+                        
+                            echo "All images pushed successfully to Container Registry"
+                        echo "Backend: ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}"
+                        echo "Frontend: ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}"
+                    """
                     } else {
                         bat """
                             @echo off
-                            REM Login to Docker Hub
-                            echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin
+                            REM Login to Container Registry with Podman
+                            echo %DOCKERHUB_CREDENTIALS_PSW% | podman login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin %CONTAINER_REGISTRY%
                             
                             REM Push backend images
                             echo Pushing backend images...
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.ADDITIONAL_TAG}
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.ADDITIONAL_TAG}
                             
                             REM Push frontend images
                             echo Pushing frontend images...
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
-                            docker push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.ADDITIONAL_TAG}
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
+                            podman push ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.ADDITIONAL_TAG}
                             
-                            echo All images pushed successfully to Docker Hub
+                            echo All images pushed successfully to Container Registry
                             echo Backend: ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_BACKEND}:${env.IMAGE_TAG}
                             echo Frontend: ${DOCKERHUB_CREDENTIALS_USR}/${IMAGE_NAME_FRONTEND}:${env.IMAGE_TAG}
                         """
@@ -514,23 +518,23 @@ pipeline {
                 echo "🧹 Cleaning up workspace..."
                 // Clean up test containers
                 if (isUnix()) {
-                    sh '''
-                        # Stop and remove any test containers
-                        docker stop test-backend test-frontend 2>/dev/null || true
-                        docker rm test-backend test-frontend 2>/dev/null || true
-                        
-                        # Clean up dangling images
-                        docker image prune -f
+                sh '''
+                        # Stop and remove any test containers with Podman
+                        podman stop test-backend test-frontend 2>/dev/null || true
+                        podman rm test-backend test-frontend 2>/dev/null || true
+                    
+                    # Clean up dangling images
+                        podman image prune -f
                     '''
                 } else {
                     bat '''
                         @echo off
-                        REM Stop and remove any test containers
-                        docker stop test-backend test-frontend 2>nul || echo Containers already stopped
-                        docker rm test-backend test-frontend 2>nul || echo Containers already removed
+                        REM Stop and remove any test containers with Podman
+                        podman stop test-backend test-frontend 2>nul || echo Containers already stopped
+                        podman rm test-backend test-frontend 2>nul || echo Containers already removed
                         
                         REM Clean up dangling images
-                        docker image prune -f
+                        podman image prune -f
                     '''
                 }
                 
@@ -570,11 +574,11 @@ pipeline {
         
         cleanup {
             script {
-                // Logout from Docker Hub
+                // Logout from Container Registry
                 if (isUnix()) {
-                    sh 'docker logout || true'
+                    sh 'podman logout || true'
                 } else {
-                    bat 'docker logout || echo Already logged out'
+                    bat 'podman logout || echo Already logged out'
                 }
                 
                 // Final cleanup
