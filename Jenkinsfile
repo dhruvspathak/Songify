@@ -62,7 +62,7 @@ pipeline {
                 script {
                     checkmarxASTScanner(
                         useOwnAdditionalOptions: true, 
-                        additionalOptions: '--sast-incremental=true', 
+                        additionalOptions: '--async', 
                         serverUrl: 'https://ind.ast.checkmarx.net/', 
                         baseAuthUrl: 'https://ind.iam.checkmarx.net/', 
                         tenantName: "${env.CX_TENANT}", 
