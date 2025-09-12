@@ -76,9 +76,9 @@ services:
       # Security headers
       - "--api.middleware=auth"
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"  # Traefik dashboard
+      - "80:80"                      # HTTP - public facing
+      - "443:443"                    # HTTPS - public facing  
+      - "127.0.0.1:8080:8080"        # Traefik dashboard - localhost only
     volumes:
       # NO MORE DOCKER SOCKET! Only certificates
       - traefik-letsencrypt:/letsencrypt
@@ -218,7 +218,7 @@ services:
     container_name: songify-prometheus
     restart: unless-stopped
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"  # Prometheus - localhost only for security
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
