@@ -23,14 +23,33 @@ public/vite.svg
 
 # Environment variables (CRITICAL: Never commit secrets!)
 .env
+.env.*
+!.env.*.template
 .env.local
 .env.*.local
 backend/.env
+backend/.env.*
+!backend/env.*.template
+!backend/.env.*.template
 frontend/.env
+frontend/.env.*
+!frontend/env.*.template
+!frontend/.env.*.template
 
 # Spotify OAuth & Development
 *.secret
 *.key
+*.pem
+*.p12
+
+# Containers & Production
+docker-compose.override.yml
+podman-compose.override.yml
+traefik-data/
+redis-data/
+prometheus-data/
+backend-logs/
+.podman/
 
 # Backup files & temporary files
 *.bak
