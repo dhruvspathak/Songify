@@ -47,13 +47,13 @@ if [ "$ENVIRONMENT" = "production" ]; then
     fi
 else
     if [ ! -f "backend/.env" ]; then
-        echo -e "${YELLOW}⚠️  Creating backend/.env from template${NC}"
-        cp backend/env.template backend/.env
+        echo -e "${YELLOW}⚠️  Creating backend/.env from Docker template${NC}"
+        cp backend/env.docker.template backend/.env
         echo -e "${YELLOW}⚠️  Please edit backend/.env with your Spotify credentials${NC}"
     fi
     if [ ! -f "frontend/.env" ]; then
-        echo -e "${YELLOW}⚠️  Creating frontend/.env from template${NC}"
-        cp frontend/env.template frontend/.env
+        echo -e "${YELLOW}⚠️  Creating frontend/.env from Docker template${NC}"
+        cp frontend/env.docker.template frontend/.env
         echo -e "${YELLOW}⚠️  Please edit frontend/.env with your configuration${NC}"
     fi
 fi

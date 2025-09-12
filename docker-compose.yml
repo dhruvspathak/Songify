@@ -1,5 +1,6 @@
 version: '3.8'
 # Podman Compose compatible configuration
+# Extends base configuration for DRY principles
 
 services:
   # Songify Backend API
@@ -22,7 +23,7 @@ services:
       - songify-network
     healthcheck:
       test: ["CMD", "node", "healthcheck.js"]
-      interval: 30s
+      interval: 30s 
       timeout: 10s
       retries: 3
       start_period: 40s
@@ -34,9 +35,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      - SETUID
-      - SETGID
     deploy:
       resources:
         limits:
@@ -58,14 +56,14 @@ services:
     env_file:
       - ./frontend/.env
     ports:
-      - "127.0.0.1:8080:80"  # Non-privileged port 8080 for development
+      - "127.0.0.1:8080:8080"  # Non-privileged port 8080 for development
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - songify-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -75,10 +73,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      - CHOWN
-      - SETUID
-      - SETGID
     deploy:
       resources:
         limits:
@@ -130,4 +124,4 @@ volumes:
   backend-logs:
     name: songify-backend-logs
   redis-data:
-    name: songify-redis-data
+   name: songify-redis-data

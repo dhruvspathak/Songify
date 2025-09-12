@@ -1,0 +1,58 @@
+# Traefik Dynamic Configuration
+# File-based service discovery for enhanced security
+
+http:
+  routers:
+    # Frontend routes
+    frontend-router:
+      rule: "Host(`localhost`) || Host(`songify.local`)"
+      service: frontend-service
+      entryPoints:
+        - "web"
+        - "websecure"
+      tls:
+        certResolver: "letsencrypt"
+
+    # Backend API routes  
+    backend-router:
+      rule: "Host(`localhost`) && PathPrefix(`/api`)"
+      service: backend-service
+      entryPoints:
+        - "web" 
+        - "websecure"
+      tls:
+        certResolver: "letsencrypt"
+
+  services:
+    # Frontend service
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:80"
+        healthCheck:
+          path: "/"
+          interval: "30s"
+          timeout: "10s"
+
+    # Backend service
+    backend-service:
+      loadBalancer:
+        servers:
+          - url: "http://backend:3000"
+        healthCheck:
+          path: "/api/health"
+          interval: "30s"
+          timeout: "10s"
+
+# Security middleware
+  middlewares:
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000

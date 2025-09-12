@@ -30,7 +30,7 @@ Copy `backend/env.template` to `backend/.env` and configure:
 CLIENT_ID=your_spotify_client_id_here
 CLIENT_SECRET=your_spotify_client_secret_here
 
-# Application URLs
+# Application URLs (Development - for manual setup)
 REDIRECT_URI=http://localhost:5173/callback
 FRONTEND_URL=http://localhost:5173
 

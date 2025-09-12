@@ -8,10 +8,6 @@ pipeline {
         IMAGE_NAME_FRONTEND = 'songify-frontend'
         IMAGE_NAME_BACKEND = 'songify-backend'
         
-        // Checkmarx One credentials - configure these in Jenkins credentials
-        CHECKMARX_SERVER_URL = credentials('checkmarx-server-url')
-        CHECKMARX_USERNAME = credentials('checkmarx-username')
-        CHECKMARX_PASSWORD = credentials('checkmarx-password')
         
         // Build configuration
         NODE_VERSION = '18'
@@ -68,7 +64,7 @@ pipeline {
                         serverUrl: 'https://ind.ast.checkmarx.net/', 
                         baseAuthUrl: 'https://ind.iam.checkmarx.net/', 
                         tenantName: "${env.CX_TENANT}", 
-                        branchName: 'master', 
+                        branchName: 'develop', 
                         checkmarxInstallation: 'CxAST CLI', 
                         projectName: 'dhruvspathak/Songify',
                         //additionalParameter: '--threshold "sast-high=10; sast-medium=20; sca-high=10; containers-high=5"'

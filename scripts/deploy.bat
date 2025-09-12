@@ -40,13 +40,13 @@ if "%ENVIRONMENT%"=="production" (
     )
 ) else (
     if not exist "backend\.env" (
-        echo ⚠️  Creating backend\.env from template
-        copy "backend\env.template" "backend\.env"
+        echo ⚠️  Creating backend\.env from Docker template
+        copy "backend\env.docker.template" "backend\.env"
         echo ⚠️  Please edit backend\.env with your Spotify credentials
     )
     if not exist "frontend\.env" (
-        echo ⚠️  Creating frontend\.env from template
-        copy "frontend\env.template" "frontend\.env"
+        echo ⚠️  Creating frontend\.env from Docker template
+        copy "frontend\env.docker.template" "frontend\.env"
         echo ⚠️  Please edit frontend\.env with your configuration
     )
 )
