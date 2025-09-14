@@ -16,7 +16,7 @@ services:
       - FRONTEND_URL=http://localhost:8080
       - CORS_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
     env_file:
-      - ./backend/.env
+      - ./backend/env.docker.template
     ports:
       - "127.0.0.1:3000:3000"  # Bind to localhost only for security
     networks:
@@ -54,12 +54,11 @@ services:
     environment:
       - NODE_ENV=production
     env_file:
-      - ./frontend/.env
+      - ./frontend/env.docker.template
     ports:
       - "127.0.0.1:8080:8080"  # Non-privileged port 8080 for development
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - songify-network
     healthcheck:
@@ -82,38 +81,38 @@ services:
           memory: 128M
           cpus: '0.1'
 
-  # Redis for session storage (optional but recommended for production)
-  redis:
-    image: redis:8.0.3-alpine3.21
-    container_name: songify-redis
-    restart: unless-stopped
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    ports:
-      - "127.0.0.1:6379:6379"  # Bind to localhost only for security
-    networks:
-      - songify-network
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    # Security hardening
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.25'
-        reservations:
-          memory: 64M
-          cpus: '0.1'
+  # Redis for session storage (optional - disabled for basic setup)
+  # redis:
+  #   image: redis:8.0.3-alpine3.21
+  #   container_name: songify-redis
+  #   restart: unless-stopped
+  #   environment:
+  #     - REDIS_PASSWORD=${REDIS_PASSWORD}
+  #   command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+  #   ports:
+  #     - "127.0.0.1:6379:6379"  # Bind to localhost only for security
+  #   networks:
+  #     - songify-network
+  #   volumes:
+  #     - redis-data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   # Security hardening
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   cap_drop:
+  #     - ALL
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 256M
+  #         cpus: '0.25'
+  #       reservations:
+  #         memory: 64M
+  #         cpus: '0.1'
 
 networks:
   songify-network:

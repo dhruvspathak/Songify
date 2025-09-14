@@ -26,9 +26,11 @@ const login = (req, res) => {
     const state = generateRandomString(16);
     const redirectUri = `${config.FRONTEND_URL}/callback`;
     
-    // Store state in secure cookie
-    const cookieOptions = generateCookieOptions(config.NODE_ENV, config.SECURITY.SESSION_TIMEOUT);
-    res.cookie(COOKIE_NAMES.AUTH_STATE, state, cookieOptions);
+    // Store state in secure cookie with explicit security attributes
+    res.cookie(COOKIE_NAMES.AUTH_STATE, state, {
+      ...generateCookieOptions(config.NODE_ENV, config.SECURITY.SESSION_TIMEOUT),
+      httpOnly: true  // Explicitly set httpOnly for SAST compliance
+    });
 
     // Build and redirect to Spotify authorization URL
     const authUrl = buildAuthorizationUrl(state, redirectUri);
@@ -100,18 +102,16 @@ const callback = async (req, res) => {
 
     const { access_token, refresh_token, expires_in } = tokenData;
 
-    // Set secure cookies
-    const cookieOptions = generateCookieOptions(config.NODE_ENV);
-    
+    // Set secure cookies with explicit security attributes
     res.cookie(COOKIE_NAMES.ACCESS_TOKEN, access_token, {
-      ...cookieOptions,
-      maxAge: expires_in * 1000
+      ...generateCookieOptions(config.NODE_ENV, expires_in * 1000),
+      httpOnly: true  // Explicitly set httpOnly for SAST compliance
     });
 
     if (refresh_token) {
       res.cookie(COOKIE_NAMES.REFRESH_TOKEN, refresh_token, {
-        ...cookieOptions,
-        maxAge: config.SECURITY.REFRESH_TOKEN_EXPIRY
+        ...generateCookieOptions(config.NODE_ENV, config.SECURITY.REFRESH_TOKEN_EXPIRY),
+        httpOnly: true  // Explicitly set httpOnly for SAST compliance
       });
     }
 
@@ -242,19 +242,17 @@ const refreshToken = async (req, res) => {
     const tokenData = await refreshAccessToken(req.refreshToken);
     const { access_token, expires_in, refresh_token: new_refresh_token } = tokenData;
 
-    const cookieOptions = generateCookieOptions(config.NODE_ENV);
-
-    // Set new access token
+    // Set new access token with explicit security attributes
     res.cookie(COOKIE_NAMES.ACCESS_TOKEN, access_token, {
-      ...cookieOptions,
-      maxAge: expires_in * 1000
+      ...generateCookieOptions(config.NODE_ENV, expires_in * 1000),
+      httpOnly: true  // Explicitly set httpOnly for SAST compliance
     });
 
     // Set new refresh token if provided
     if (new_refresh_token) {
       res.cookie(COOKIE_NAMES.REFRESH_TOKEN, new_refresh_token, {
-        ...cookieOptions,
-        maxAge: config.SECURITY.REFRESH_TOKEN_EXPIRY
+        ...generateCookieOptions(config.NODE_ENV, config.SECURITY.REFRESH_TOKEN_EXPIRY),
+        httpOnly: true  // Explicitly set httpOnly for SAST compliance
       });
     }
 
