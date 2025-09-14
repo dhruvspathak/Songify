@@ -1,0 +1,50 @@
+/**
+ * Media Card Styles
+ */
+
+.media-card {
+  transition: var(--transition-normal, 0.3s ease);
+}
+
+.media-card:hover {
+  transform: translateY(-2px);
+}
+
+.media-card__card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition-normal, 0.3s ease);
+}
+
+.media-card__card:hover {
+  box-shadow: var(--shadow-md, 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23));
+}
+
+.media-card__image {
+  object-fit: cover;
+  transition: var(--transition-normal, 0.3s ease);
+}
+
+.media-card__content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 0.25rem);
+}
+
+.media-card__title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.media-card__subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+  font-size: 0.875rem;
+}

@@ -1,0 +1,57 @@
+/**
+ * AlbumDetails Page Styles
+ */
+
+.album-details-container {
+    margin-left: var(--main-content-margin-left);
+    padding: var(--spacing-xl);
+    min-height: calc(100vh - var(--appbar-height));
+}
+
+.album-details-header {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--spacing-lg);
+}
+
+.album-details-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-md);
+}
+
+.album-tracks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+}
+
+.album-track-card {
+    background-color: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    transition: var(--transition-normal);
+}
+
+.album-track-card:hover {
+    background-color: var(--color-background-tertiary);
+    transform: translateY(-2px);
+}
+
+.album-track-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--spacing-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.album-track-artist {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
