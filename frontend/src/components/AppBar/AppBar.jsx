@@ -168,7 +168,7 @@ const AppBarComponent = ({ handleLogin, setTrackId }) => {
                     <>
                         <MenuItem disabled>ALBUMS</MenuItem>
                         {albumResults.map((result, index) => (
-                            <MenuItem key={index} component="a" href={result.external_urls.spotify} target='_blank' onClick={handleClose}>
+                            <MenuItem key={index} component="a" href={result.external_urls.spotify} target='_blank' rel="noopener noreferrer" onClick={handleClose}>
                                 {result.name}
                             </MenuItem>
                         ))}
@@ -178,7 +178,7 @@ const AppBarComponent = ({ handleLogin, setTrackId }) => {
                     <>
                         <MenuItem disabled>ARTISTS</MenuItem>
                         {artistResults.map((result, index) => (
-                            <MenuItem key={index} component="a" href={result.external_urls.spotify} target='_blank' onClick={handleClose}>
+                            <MenuItem key={index} component="a" href={result.external_urls.spotify} target='_blank' rel="noopener noreferrer" onClick={handleClose}>
                                 {result.name}
                             </MenuItem>
                         ))}
