@@ -13,17 +13,30 @@ const encodeForLog = (input) => {
     return String(input);
   }
   
-  return input
-    // Remove or encode newline characters that could break log format
+  // First, limit length to prevent log flooding
+  let sanitized = input.substring(0, 500);
+  
+  // Encode ALL potentially dangerous characters for log safety
+  return sanitized
+    // Encode newline characters that could break log format
     .replace(/\r\n/g, '\\r\\n')
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')
-    // Remove or encode tab characters
+    // Encode tab characters
     .replace(/\t/g, '\\t')
-    // Encode other control characters
-    .replace(/[\x00-\x1F\x7F]/g, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
-    // Limit length to prevent log flooding
-    .substring(0, 500);
+    // Encode backslashes to prevent escape sequence injection
+    .replace(/\\/g, '\\\\')
+    // Encode quotes that could break log parsing
+    .replace(/"/g, '\\"')
+    .replace(/'/g, "\\'")
+    // Encode control characters (0x00-0x1F and 0x7F-0x9F)
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+    // Encode Unicode line separators
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+    // Encode other potentially dangerous Unicode characters
+    .replace(/[\u0085\u00A0\u1680\u180E\u2000-\u200F\u2028-\u202F\u205F-\u206F\u3000\uFEFF]/g, 
+      (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`);
 };
 
 /**
@@ -36,7 +49,6 @@ const sanitizeForLog = (input, options = {}) => {
   const { 
     maxLength = 100, 
     maskSensitive = true, 
-    allowedChars = /^[a-zA-Z0-9\-_.@+/=\s]*$/,
     fieldName = 'unknown'
   } = options;
   
@@ -45,39 +57,42 @@ const sanitizeForLog = (input, options = {}) => {
     return '[NULL]';
   }
   
-  // Convert to string
-  let sanitized = String(input);
+  // Convert to string and immediately encode to prevent any bypass
+  let rawString = String(input);
   
-  // Mask potentially sensitive data patterns
+  // ALWAYS encode first to prevent log forging - this is the critical fix
+  let encoded = encodeForLog(rawString);
+  
+  // Mask potentially sensitive data patterns AFTER encoding
   if (maskSensitive) {
-    // Mask tokens, codes, and other sensitive patterns
-    if (sanitized.length > 20 && /^[A-Za-z0-9+/=_-]+$/.test(sanitized)) {
-      return `[${fieldName.toUpperCase()}_MASKED:${sanitized.substring(0, 4)}***${sanitized.substring(sanitized.length - 4)}]`;
+    // Check original string for sensitive patterns, but return masked result
+    if (rawString.length > 20 && /^[A-Za-z0-9+/=_-]+$/.test(rawString)) {
+      return `[${fieldName.toUpperCase()}_MASKED:${encodeForLog(rawString.substring(0, 4))}***${encodeForLog(rawString.substring(rawString.length - 4))}]`;
     }
     
     // Mask email addresses
-    if (sanitized.includes('@') && sanitized.includes('.')) {
+    if (rawString.includes('@') && rawString.includes('.')) {
       return '[EMAIL_MASKED]';
     }
     
     // Mask URLs
-    if (sanitized.startsWith('http://') || sanitized.startsWith('https://')) {
+    if (rawString.startsWith('http://') || rawString.startsWith('https://')) {
       return '[URL_MASKED]';
+    }
+    
+    // Mask file paths
+    if (rawString.includes('/') && rawString.length > 10) {
+      return '[PATH_MASKED]';
     }
   }
   
-  // Check against allowed characters
-  if (!allowedChars.test(sanitized)) {
-    return `[INVALID_CHARS_IN_${fieldName.toUpperCase()}]`;
+  // Truncate encoded string if too long
+  if (encoded.length > maxLength) {
+    encoded = encoded.substring(0, maxLength) + '[TRUNCATED]';
   }
   
-  // Truncate if too long
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength) + '...';
-  }
-  
-  // Final encoding for log safety
-  return encodeForLog(sanitized);
+  // Return the encoded string - no further processing to prevent bypass
+  return encoded;
 };
 
 /**
@@ -88,11 +103,12 @@ const sanitizeForLog = (input, options = {}) => {
 const sanitizeRequestForLog = (req) => {
   if (!req) return '[NO_REQUEST]';
   
+  // Ensure ALL request data is properly encoded to prevent log forging
   return {
-    method: sanitizeForLog(req.method, { fieldName: 'method', maxLength: 10 }),
-    path: sanitizeForLog(req.path, { fieldName: 'path', maxLength: 200 }),
-    url: sanitizeForLog(req.url, { fieldName: 'url', maxLength: 200 }),
-    ip: sanitizeForLog(req.ip, { fieldName: 'ip', maxLength: 45 }),
+    method: sanitizeForLog(req.method, { fieldName: 'method', maxLength: 10, maskSensitive: false }),
+    path: sanitizeForLog(req.path, { fieldName: 'path', maxLength: 200, maskSensitive: true }),
+    url: sanitizeForLog(req.url, { fieldName: 'url', maxLength: 200, maskSensitive: true }),
+    ip: sanitizeForLog(req.ip, { fieldName: 'ip', maxLength: 45, maskSensitive: false }),
     userAgent: req.get('User-Agent') ? '[USER_AGENT_REDACTED]' : '[NO_USER_AGENT]'
   };
 };
@@ -107,15 +123,15 @@ const sanitizeErrorForLog = (error) => {
   
   if (error instanceof Error) {
     return {
-      name: sanitizeForLog(error.name, { fieldName: 'errorName', maxLength: 50 }),
-      message: sanitizeForLog(error.message, { fieldName: 'errorMessage', maxLength: 200 }),
+      name: sanitizeForLog(error.name, { fieldName: 'errorName', maxLength: 50, maskSensitive: false }),
+      message: sanitizeForLog(error.message, { fieldName: 'errorMessage', maxLength: 200, maskSensitive: true }),
       // Don't include stack trace in production to avoid path disclosure
       stack: process.env.NODE_ENV === 'development' ? '[STACK_REDACTED_IN_PROD]' : '[STACK_REDACTED]'
     };
   }
   
   return {
-    error: sanitizeForLog(String(error), { fieldName: 'error', maxLength: 200 })
+    error: sanitizeForLog(String(error), { fieldName: 'error', maxLength: 200, maskSensitive: true })
   };
 };
 
@@ -126,7 +142,8 @@ const sanitizeErrorForLog = (error) => {
  */
 const secureLog = (message, data = null) => {
   const timestamp = new Date().toISOString();
-  const safeMessage = encodeForLog(message);
+  // CRITICAL: Always encode the message to prevent log forging
+  const safeMessage = encodeForLog(String(message || ''));
   
   if (data === null || data === undefined) {
     console.log(`[${timestamp}] ${safeMessage}`);
@@ -135,7 +152,7 @@ const secureLog = (message, data = null) => {
   
   let sanitizedData;
   
-  if (typeof data === 'object') {
+  if (typeof data === 'object' && data !== null) {
     // Handle different object types
     if (data.method && data.url) {
       // Looks like request object
@@ -144,15 +161,16 @@ const secureLog = (message, data = null) => {
       // Looks like error object
       sanitizedData = sanitizeErrorForLog(data);
     } else {
-      // Generic object sanitization
+      // Generic object sanitization - ensure ALL keys and values are encoded
       sanitizedData = Object.keys(data).reduce((acc, key) => {
         const value = data[key];
-        acc[key] = sanitizeForLog(value, { fieldName: key });
+        const safeKey = encodeForLog(String(key));
+        acc[safeKey] = sanitizeForLog(value, { fieldName: key, maskSensitive: true });
         return acc;
       }, {});
     }
   } else {
-    sanitizedData = sanitizeForLog(data, { fieldName: 'data' });
+    sanitizedData = sanitizeForLog(data, { fieldName: 'data', maskSensitive: true });
   }
   
   console.log(`[${timestamp}] ${safeMessage}`, sanitizedData);
@@ -165,7 +183,8 @@ const secureLog = (message, data = null) => {
  */
 const secureError = (message, error = null) => {
   const timestamp = new Date().toISOString();
-  const safeMessage = encodeForLog(message);
+  // CRITICAL: Always encode the message to prevent log forging
+  const safeMessage = encodeForLog(String(message || ''));
   
   if (error === null || error === undefined) {
     console.error(`[${timestamp}] ERROR: ${safeMessage}`);
@@ -183,16 +202,30 @@ const secureError = (message, error = null) => {
  */
 const secureWarn = (message, data = null) => {
   const timestamp = new Date().toISOString();
-  const safeMessage = encodeForLog(message);
+  // CRITICAL: Always encode the message to prevent log forging
+  const safeMessage = encodeForLog(String(message || ''));
   
   if (data === null || data === undefined) {
     console.warn(`[${timestamp}] WARN: ${safeMessage}`);
     return;
   }
   
-  const sanitizedData = typeof data === 'object' ? 
-    sanitizeRequestForLog(data) : 
-    sanitizeForLog(data, { fieldName: 'data' });
+  let sanitizedData;
+  if (typeof data === 'object' && data !== null) {
+    if (data.method && data.url) {
+      sanitizedData = sanitizeRequestForLog(data);
+    } else {
+      // Generic object sanitization with encoding
+      sanitizedData = Object.keys(data).reduce((acc, key) => {
+        const value = data[key];
+        const safeKey = encodeForLog(String(key));
+        acc[safeKey] = sanitizeForLog(value, { fieldName: key, maskSensitive: true });
+        return acc;
+      }, {});
+    }
+  } else {
+    sanitizedData = sanitizeForLog(data, { fieldName: 'data', maskSensitive: true });
+  }
     
   console.warn(`[${timestamp}] WARN: ${safeMessage}`, sanitizedData);
 };
@@ -203,15 +236,15 @@ const secureWarn = (message, data = null) => {
  * @param {object} details - Event details (will be sanitized)
  */
 const logAuthEvent = (event, details = {}) => {
-  const safeEvent = sanitizeForLog(event, { fieldName: 'authEvent', maxLength: 50 });
+  const safeEvent = sanitizeForLog(event, { fieldName: 'authEvent', maxLength: 50, maskSensitive: false });
   
   const sanitizedDetails = {
-    ip: details.ip ? sanitizeForLog(details.ip, { fieldName: 'ip', maxLength: 45 }) : '[NO_IP]',
+    ip: details.ip ? sanitizeForLog(details.ip, { fieldName: 'ip', maxLength: 45, maskSensitive: false }) : '[NO_IP]',
     userAgent: details.userAgent ? '[USER_AGENT_REDACTED]' : '[NO_USER_AGENT]',
-    code: details.code ? `[CODE_MASKED:${details.code.substring(0, 4)}***]` : '[NO_CODE]',
-    state: details.state ? `[STATE_MASKED:${details.state.substring(0, 4)}***]` : '[NO_STATE]',
+    code: details.code ? `[CODE_MASKED:${encodeForLog(details.code.substring(0, 4))}***]` : '[NO_CODE]',
+    state: details.state ? `[STATE_MASKED:${encodeForLog(details.state.substring(0, 4))}***]` : '[NO_STATE]',
     success: Boolean(details.success),
-    error: details.error ? sanitizeForLog(details.error, { fieldName: 'authError', maxLength: 100 }) : null
+    error: details.error ? sanitizeForLog(details.error, { fieldName: 'authError', maxLength: 100, maskSensitive: true }) : null
   };
   
   secureLog(`AUTH_EVENT: ${safeEvent}`, sanitizedDetails);

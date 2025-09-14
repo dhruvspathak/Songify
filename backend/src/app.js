@@ -22,12 +22,19 @@ const {
 const createApp = () => {
   const app = express();
 
+  // SECURITY: Disable X-Powered-By header to prevent server fingerprinting
+  app.disable('x-powered-by');
+  
+  // SECURITY: Additional Express security settings
+  app.set('trust proxy', 1); // Trust first proxy for secure headers
+  app.set('x-powered-by', false); // Ensure X-Powered-By is disabled
+
   // Request logging (in development)
   if (config.NODE_ENV === 'development') {
     app.use(requestLogger);
   }
 
-  // Security middleware
+  // Security middleware (must be applied early)
   const securityMiddleware = configureSecurityMiddleware();
   securityMiddleware.forEach(middleware => app.use(middleware));
 

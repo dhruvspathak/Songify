@@ -17,10 +17,11 @@ const healthCheck = (req, res) => {
     const healthData = {
       status: 'OK',
       timestamp: new Date().toISOString(),
-      environment: config.NODE_ENV,
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      version: process.version
+      // SECURITY: Remove server identifying information
+      // environment: config.NODE_ENV, // Removed to prevent info disclosure
+      uptime: Math.floor(process.uptime()), // Rounded to prevent precise timing attacks
+      // memory: process.memoryUsage(), // Removed to prevent system info disclosure
+      // version: process.version // Removed to prevent Node.js version disclosure
     };
 
     res.status(HTTP_STATUS.OK).json(healthData);
@@ -29,7 +30,7 @@ const healthCheck = (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       status: 'ERROR',
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: 'Internal server error' // Generic error message
     });
   }
 };
@@ -44,25 +45,31 @@ const systemStatus = (req, res) => {
     const statusData = {
       status: 'OK',
       timestamp: new Date().toISOString(),
-      environment: config.NODE_ENV,
+      // SECURITY: Remove environment info to prevent disclosure
+      // environment: config.NODE_ENV,
       system: {
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        cpu: process.cpuUsage(),
-        version: process.version,
-        platform: process.platform,
-        arch: process.arch
+        uptime: Math.floor(process.uptime()), // Rounded to prevent precise timing
+        // SECURITY: Remove detailed system information
+        // memory: process.memoryUsage(),
+        // cpu: process.cpuUsage(),
+        // version: process.version,
+        // platform: process.platform,
+        // arch: process.arch
+        healthy: true // Generic health indicator
       },
       application: {
         name: 'Songify Backend',
-        version: '1.0.0',
-        port: config.PORT,
-        trackedCodes: codeManager.getCodeCount()
+        // SECURITY: Remove version to prevent info disclosure
+        // version: '1.0.0',
+        // port: config.PORT, // Remove port info
+        status: 'running'
+        // trackedCodes: codeManager.getCodeCount() // Remove internal metrics
       },
       services: {
         spotify: {
-          configured: !!(config.SPOTIFY.CLIENT_ID && config.SPOTIFY.CLIENT_SECRET),
-          clientIdLength: config.SPOTIFY.CLIENT_ID ? config.SPOTIFY.CLIENT_ID.length : 0
+          configured: !!(config.SPOTIFY.CLIENT_ID && config.SPOTIFY.CLIENT_SECRET)
+          // SECURITY: Remove client ID length info
+          // clientIdLength: config.SPOTIFY.CLIENT_ID ? config.SPOTIFY.CLIENT_ID.length : 0
         }
       }
     };
@@ -73,7 +80,7 @@ const systemStatus = (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       status: 'ERROR',
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: 'Internal server error' // Generic error message
     });
   }
 };
@@ -119,15 +126,16 @@ const livenessProbe = (req, res) => {
   try {
     res.status(HTTP_STATUS.OK).json({
       status: 'ALIVE',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
+      timestamp: new Date().toISOString()
+      // SECURITY: Remove uptime to prevent system info disclosure
+      // uptime: process.uptime()
     });
   } catch (error) {
     console.error('Liveness probe error:', error.message);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       status: 'ERROR',
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: 'Internal server error' // Generic error message
     });
   }
 };
