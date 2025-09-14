@@ -19,7 +19,7 @@ router.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Songify Backend API',
-    version: '1.0.0',
+    // SECURITY: Remove version information to prevent information disclosure
     timestamp: new Date().toISOString(),
     endpoints: {
       auth: '/auth',

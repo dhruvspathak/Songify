@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../hooks';
 import { API_ENDPOINTS } from '../../constants';
+import { secureLog, secureError, secureWarn } from '../../utils/secureLogger';
 import './Player.css';
 
 const MusicPlayer = ({ trackId }) => {
@@ -48,16 +49,16 @@ const MusicPlayer = ({ trackId }) => {
             setPlayer(player)
 
             player.addListener('initialization_error', ({ message }) => {
-                console.error('Failed to initialize', message)
+                secureError('Failed to initialize', message)
             })
             player.addListener('authentication_error', ({ message }) => {
-                console.error('Failed to authenticate', message)
+                secureError('Failed to authenticate', message)
             })
             player.addListener('account_error', ({ message }) => {
-                console.error('Failed to validate Spotify account', message)
+                secureError('Failed to validate Spotify account', message)
             })
             player.addListener('playback_error', ({ message }) => {
-                console.error('Failed to perform playback', message)
+                secureError('Failed to perform playback', message)
             })
 
             player.addListener('ready', ({ device_id }) => {
@@ -83,7 +84,7 @@ const MusicPlayer = ({ trackId }) => {
 
             player.connect().then(success => {
                 if (!success) {
-                    console.error('Web Playback SDK failed to connect')
+                    secureError('Web Playback SDK failed to connect')
                 }
             })
         }
@@ -92,7 +93,7 @@ const MusicPlayer = ({ trackId }) => {
     // Handle track changes
     useEffect(() => {
         if (player && trackId && deviceID && accessToken) {
-            console.log("Attempting to play track:", trackId)
+            secureLog("Attempting to play track:", { trackId: trackId ? 'track_provided' : 'no_track' })
             
             // Strategy: Use Web Playback SDK for immediate playback, fallback to API
             const playTrackViaSdk = () => {
@@ -114,7 +115,7 @@ const MusicPlayer = ({ trackId }) => {
                                 })
                             }).then(response => {
                                 if (response.ok) {
-                                    console.log(`✅ Successfully started playing track: ${trackId}`)
+                                    secureLog(`✅ Successfully started playing track`)
                                     resolve(response)
                                 } else if (response.status === 404) {
                                     // Device not found, try without specifying device
@@ -133,15 +134,15 @@ const MusicPlayer = ({ trackId }) => {
                                 }
                             }).then(response => {
                                 if (response && response.ok) {
-                                    console.log(`✅ Successfully started playing track (no device specified): ${trackId}`)
+                                    secureLog(`✅ Successfully started playing track (no device specified)`)
                                     resolve(response)
                                 } else if (response) {
                                     throw new Error(`Fallback playback failed: ${response.status}`)
                                 }
                             }).catch(reject)
                         }, 1000) // Wait 1 second for device transfer
-                    }).catch(transferError => {
-                        console.warn('Device transfer failed, trying direct API call:', transferError)
+                        }).catch(transferError => {
+                        secureWarn('Device transfer failed, trying direct API call:', transferError)
                         // Try direct API call without transfer
                         fetch(`https://api.spotify.com/v1/me/player/play`, {
                             method: 'PUT',
@@ -154,7 +155,7 @@ const MusicPlayer = ({ trackId }) => {
                             })
                         }).then(response => {
                             if (response.ok) {
-                                console.log(`✅ Direct API playback successful: ${trackId}`)
+                                secureLog(`✅ Direct API playback successful`)
                                 resolve(response)
                             } else {
                                 throw new Error(`Direct API failed: ${response.status}`)
@@ -165,11 +166,11 @@ const MusicPlayer = ({ trackId }) => {
             }
 
             playTrackViaSdk().catch(err => {
-                console.error('❌ All playback methods failed:', err)
+                secureError('❌ All playback methods failed:', err)
                 if (err.message.includes('404')) {
-                    console.warn('💡 Tip: Make sure you have Spotify Premium and an active Spotify session running')
+                    secureWarn('💡 Tip: Make sure you have Spotify Premium and an active Spotify session running')
                 } else if (err.message.includes('403')) {
-                    console.warn('💡 Tip: Check that your Spotify app has proper permissions and is not in development mode')
+                    secureWarn('💡 Tip: Check that your Spotify app has proper permissions and is not in development mode')
                 }
             })
         }
@@ -213,28 +214,28 @@ const MusicPlayer = ({ trackId }) => {
 
             if (response.ok) {
                 const data = await response.json()
-                console.log('Available devices:', data)
+                secureLog('Available devices found:', data)
                 const device = data.devices.find(d => d.is_active)
                 if (device) {
                     setDeviceID(device.id)
-                    console.log('Active device ID:', device.id)
+                    secureLog('Active device found:', { type: device.type, name: device.name, is_active: device.is_active })
                 } else {
-                    console.warn('No active device found.')
+                    secureWarn('No active device found.')
                 }
             } else {
-                console.error('Failed to fetch devices:', response)
+                secureError('Failed to fetch devices:', { status: response.status, statusText: response.statusText })
             }
         } catch (error) {
-            console.error('Error fetching devices:', error)
+            secureError('Error fetching devices:', error)
         }
     }
 
     const handlePlayerAction = (action) => {
         if (player) {
             player[action]().catch(err => {
-                console.error(`Error performing ${action}:`, err)
+                secureError(`Error performing ${action}:`, err)
                 if (err.message && err.message.includes('no list was loaded')) {
-                    console.warn('💡 No track loaded in player. Please select a track first or make sure Spotify is playing something.')
+                    secureWarn('💡 No track loaded in player. Please select a track first or make sure Spotify is playing something.')
                     // Try to get current playback state and resume if possible
                     fetch('https://api.spotify.com/v1/me/player/currently-playing', {
                         headers: {
@@ -247,29 +248,29 @@ const MusicPlayer = ({ trackId }) => {
                         throw new Error('No current playback')
                     }).then(data => {
                         if (data && data.item) {
-                            console.log('Found current track, attempting to resume playback...')
+                            secureLog('Found current track, attempting to resume playback...')
                             // Set the current track and try the action again
                             setTrack(data.item)
                             // Wait a moment then retry the action
                             setTimeout(() => {
                                 player[action]().catch(retryErr => {
-                                    console.error(`Retry of ${action} also failed:`, retryErr)
+                                    secureError(`Retry of ${action} also failed:`, retryErr)
                                 })
                             }, 500)
                         }
                     }).catch(playbackErr => {
-                        console.warn('No current playback found:', playbackErr.message)
+                        secureWarn('No current playback found:', playbackErr.message)
                     })
                 }
             })
         } else {
-            console.error('Player is not initialized')
+            secureError('Player is not initialized')
         }
     }
 
     const transferPlayback = async () => {
         if (!deviceID) {
-            console.error('No device ID available for transfer playback')
+            secureError('No device ID available for transfer playback')
             return Promise.reject('No device ID')
         }
 
@@ -293,12 +294,12 @@ const MusicPlayer = ({ trackId }) => {
                 throw new Error(`Transfer failed: ${response.status} ${response.statusText}`)
             }
 
-            console.log('✅ Playback transferred to web player successfully')
+            secureLog('✅ Playback transferred to web player successfully')
             return response
         } catch (error) {
-            console.error('❌ Transfer playback error:', error.message)
+            secureError('❌ Transfer playback error:', error.message)
             if (error.message.includes('404')) {
-                console.warn('💡 This feature requires Spotify Premium and an active device')
+                secureWarn('💡 This feature requires Spotify Premium and an active device')
             }
             throw error
         }
@@ -350,12 +351,9 @@ const MusicPlayer = ({ trackId }) => {
                         fetch(API_ENDPOINTS.AUTH.DEBUG, { credentials: 'include' })
                         .then(r => r.json())
                         .then(data => {
-                            console.log('🔍 Debug Info:', data);
-                            console.log('📋 User Info:', data.user);
-                            console.log('🔑 Endpoint Tests:', data.endpointTests);
-                            console.log('🎯 Account Type:', data.user?.product || 'Unknown');
+                            secureLog('🔍 Debug Info:', data);
                         })
-                        .catch(e => console.error('Debug failed:', e));
+                        .catch(e => secureError('Debug failed:', e));
                     }}
                 >
                     Debug Scopes

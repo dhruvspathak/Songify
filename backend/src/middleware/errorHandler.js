@@ -5,6 +5,7 @@
 
 const config = require('../config/environment');
 const { HTTP_STATUS, ERROR_MESSAGES } = require('../constants');
+const { secureError, sanitizeRequestForLog } = require('../utils/secureLogger');
 
 /**
  * Global error handler middleware
@@ -14,11 +15,9 @@ const { HTTP_STATUS, ERROR_MESSAGES } = require('../constants');
  * @param {Function} next - Express next function
  */
 const globalErrorHandler = (err, req, res, next) => {
-  console.error('Global error handler:', {
-    message: err.message,
-    stack: config.NODE_ENV === 'development' ? err.stack : '[REDACTED]',
-    url: req.url,
-    method: req.method,
+  secureError('Global error handler:', {
+    error: err,
+    request: sanitizeRequestForLog(req),
     timestamp: new Date().toISOString()
   });
 
@@ -90,7 +89,8 @@ const requestLogger = (req, res, next) => {
   
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+    const requestData = sanitizeRequestForLog(req);
+    console.log(`${requestData.method} ${requestData.path} - ${res.statusCode} - ${duration}ms`);
   });
   
   next();

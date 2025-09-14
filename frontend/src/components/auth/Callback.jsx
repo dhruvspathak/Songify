@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../constants';
 import { LoadingSpinner, ErrorMessage } from '../ui';
+import { secureLog, secureError } from '../../utils/secureLogger';
 
 const Callback = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const Callback = () => {
       }
 
       try {
-        console.log('Sending auth callback request...');
+        secureLog('Sending auth callback request...');
         const response = await fetch(API_ENDPOINTS.AUTH.CALLBACK, {
           method: 'POST',
           credentials: 'include',
@@ -52,7 +53,7 @@ const Callback = () => {
         });
 
         const data = await response.json();
-        console.log('Auth callback response:', data);
+        secureLog('Auth callback response received:', { success: data.success, hasError: !!data.error });
 
         if (!response.ok || !data.success) {
           throw new Error(data.error || data.details || `Authentication failed: ${response.status}`);
@@ -64,7 +65,7 @@ const Callback = () => {
         // Trigger a page reload to refresh authentication state
         window.location.href = '/?login=success';
       } catch (error) {
-        console.error('Authentication error:', error.message);
+        secureError('Authentication error:', error);
         setError(error.message);
         setTimeout(() => navigate('/'), 3000);
       } finally {

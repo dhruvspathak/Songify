@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../constants';
+import { secureError } from '../utils/secureLogger';
 
 export const useAuth = () => {
   const [accessToken, setAccessToken] = useState(null);
@@ -25,7 +26,7 @@ export const useAuth = () => {
       
       return null;
     } catch (error) {
-      console.error('Failed to get access token:', error);
+      secureError('Failed to get access token:', error);
       return null;
     }
   };
@@ -39,7 +40,7 @@ export const useAuth = () => {
       
       return response.ok;
     } catch (error) {
-      console.error('Auth check failed:', error);
+      secureError('Auth check failed:', error);
       return false;
     }
   };
@@ -67,7 +68,7 @@ export const useAuth = () => {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       } catch (error) {
-        console.error('Auth initialization failed:', error);
+        secureError('Auth initialization failed:', error);
         setError(error.message);
         setIsAuthenticated(false);
         setAccessToken(null);
@@ -86,7 +87,7 @@ export const useAuth = () => {
       setAccessToken(token);
       return token;
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      secureError('Token refresh failed:', error);
       setError(error.message);
       return null;
     }
@@ -110,11 +111,11 @@ export const useAuth = () => {
         setAccessToken(null);
         return true;
       } else {
-        console.error('Logout failed: Server returned an error');
+        secureError('Logout failed: Server returned an error');
         return false;
       }
     } catch (error) {
-      console.error('Logout failed:', error);
+      secureError('Logout failed:', error);
       setError(error.message);
       return false;
     }

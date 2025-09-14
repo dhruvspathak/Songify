@@ -20,6 +20,7 @@ const {
   sanitizeErrorMessage,
   createSafeAuthResponse
 } = require('../utils');
+const { secureLog, secureError, logAuthEvent } = require('../utils/secureLogger');
 
 /**
  * Initiate Spotify OAuth login
@@ -47,7 +48,7 @@ const login = (req, res) => {
     
     res.redirect(authUrl);
   } catch (error) {
-    console.error('Login initiation error:', error.message);
+    secureError('Login initiation error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.INTERNAL_ERROR
@@ -77,7 +78,12 @@ const callback = async (req, res) => {
     }
     
     if (!sanitizedCode) {
-      console.log('Invalid authorization code provided');
+      logAuthEvent('INVALID_AUTH_CODE', { 
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        success: false,
+        error: 'Invalid authorization code'
+      });
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         error: ERROR_MESSAGES.MISSING_PARAMETERS
@@ -90,7 +96,12 @@ const callback = async (req, res) => {
     }
     
     if (!sanitizedState) {
-      console.log('Invalid state parameter provided');
+      logAuthEvent('INVALID_STATE_PARAM', { 
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        success: false,
+        error: 'Invalid state parameter'
+      });
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         error: ERROR_MESSAGES.MISSING_PARAMETERS
@@ -103,7 +114,12 @@ const callback = async (req, res) => {
 
     // Validate state to prevent CSRF attacks
     if (state !== storedState) {
-      console.log('State mismatch in callback');
+      logAuthEvent('STATE_MISMATCH', { 
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        success: false,
+        error: 'CSRF protection - state mismatch'
+      });
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         error: ERROR_MESSAGES.STATE_MISMATCH
@@ -115,7 +131,13 @@ const callback = async (req, res) => {
 
     // Check for code reuse
     if (codeManager.isCodeUsed(code)) {
-      console.log('Authorization code reuse attempt:', code.substring(0, 20) + '...');
+      logAuthEvent('CODE_REUSE_ATTEMPT', { 
+        code: code,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        success: false,
+        error: 'Code already used'
+      });
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         error: ERROR_MESSAGES.CODE_ALREADY_USED
@@ -127,12 +149,16 @@ const callback = async (req, res) => {
 
     // Exchange code for tokens with complete input isolation
     const redirectUri = `${config.FRONTEND_URL}/callback`;
-    console.log('Attempting token exchange...');
+    secureLog('Attempting token exchange...');
     
     // Create isolated context for token exchange to break data flow
     const isolatedCode = String(code); // Create new string reference
     const rawTokenData = await exchangeCodeForTokens(isolatedCode, redirectUri);
-    console.log('✅ Token exchange successful');
+    logAuthEvent('TOKEN_EXCHANGE_SUCCESS', { 
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
 
     // Validate and sanitize token data from Spotify API
     const tokenData = validateSpotifyTokenData(rawTokenData);
@@ -166,13 +192,14 @@ const callback = async (req, res) => {
     
     if (cleanupCode && codeManager.isCodeUsed(cleanupCode)) {
       codeManager.removeCode(cleanupCode);
-      console.log('Removed failed authorization code from tracking');
+      secureLog('Removed failed authorization code from tracking');
     }
 
-    console.error('OAuth callback error:', {
-      error: error.message,
-      response: error.response?.data
-      // Note: Not logging req.body to prevent sensitive data in logs
+    logAuthEvent('OAUTH_CALLBACK_ERROR', { 
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: false,
+      error: error.message
     });
 
     // Provide specific error messages with sanitization
@@ -216,7 +243,7 @@ const getCurrentUser = (req, res) => {
       user: req.user
     });
   } catch (error) {
-    console.error('Get current user error:', error.message);
+    secureError('Get current user error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.USER_DATA_FETCH_FAILED
@@ -236,7 +263,7 @@ const getAccessToken = (req, res) => {
       access_token: req.accessToken
     });
   } catch (error) {
-    console.error('Get access token error:', error.message);
+    secureError('Get access token error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.TOKEN_RETRIEVAL_FAILED
@@ -272,7 +299,7 @@ const debugToken = async (req, res) => {
       endpointTests: endpointTests
     });
   } catch (error) {
-    console.error('Debug token error:', error.response?.data || error.message);
+    secureError('Debug token error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.DEBUG_CHECK_FAILED,
@@ -314,7 +341,7 @@ const refreshToken = async (req, res) => {
       message: SUCCESS_MESSAGES.TOKEN_REFRESHED
     });
   } catch (error) {
-    console.error('Token refresh error:', error.response?.data || error.message);
+    secureError('Token refresh error:', error);
     
     // Sanitize error message
     const details = error.response?.data?.error_description || error.message;
@@ -343,7 +370,7 @@ const logout = (req, res) => {
       message: SUCCESS_MESSAGES.LOGOUT_SUCCESS
     });
   } catch (error) {
-    console.error('Logout error:', error.message);
+    secureError('Logout error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: ERROR_MESSAGES.INTERNAL_ERROR
