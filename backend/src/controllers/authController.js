@@ -13,7 +13,11 @@ const {
   refreshAccessToken,
   getUserProfile,
   testEndpointAccess,
-  codeManager
+  codeManager,
+  validateAuthCode,
+  validateState,
+  validateSpotifyTokenData,
+  sanitizeErrorMessage
 } = require('../utils');
 
 /**
@@ -57,12 +61,25 @@ const login = (req, res) => {
  */
 const callback = async (req, res) => {
   try {
-    const { code, state } = req.body;
+    // Validate and sanitize input parameters
+    const rawCode = req.body?.code;
+    const rawState = req.body?.state;
     const storedState = req.cookies[COOKIE_NAMES.AUTH_STATE];
 
-    // Validate required parameters
-    if (!code || !state) {
-      console.log('Missing callback parameters:', { code: !!code, state: !!state });
+    // Validate authorization code
+    const code = validateAuthCode(rawCode);
+    if (!code) {
+      console.log('Invalid authorization code provided');
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        error: ERROR_MESSAGES.MISSING_PARAMETERS
+      });
+    }
+
+    // Validate state parameter
+    const state = validateState(rawState);
+    if (!state) {
+      console.log('Invalid state parameter provided');
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         error: ERROR_MESSAGES.MISSING_PARAMETERS
@@ -97,9 +114,11 @@ const callback = async (req, res) => {
     const redirectUri = `${config.FRONTEND_URL}/callback`;
     console.log('Attempting token exchange...');
     
-    const tokenData = await exchangeCodeForTokens(code, redirectUri);
+    const rawTokenData = await exchangeCodeForTokens(code, redirectUri);
     console.log('✅ Token exchange successful');
 
+    // Validate and sanitize token data from Spotify API
+    const tokenData = validateSpotifyTokenData(rawTokenData);
     const { access_token, refresh_token, expires_in } = tokenData;
 
     // Set secure cookies with explicit security attributes
@@ -115,28 +134,31 @@ const callback = async (req, res) => {
       });
     }
 
+    // Return sanitized response - only include validated expires_in
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.AUTH_SUCCESS,
-      expires_in: expires_in
+      expires_in: expires_in  // This is now validated and safe
     });
   } catch (error) {
     // Clean up failed authorization code
-    const { code } = req.body;
-    if (code && codeManager.isCodeUsed(code)) {
-      codeManager.removeCode(code);
+    const rawCode = req.body?.code;
+    const validatedCode = validateAuthCode(rawCode);
+    if (validatedCode && codeManager.isCodeUsed(validatedCode)) {
+      codeManager.removeCode(validatedCode);
       console.log('Removed failed authorization code from tracking');
     }
 
     console.error('OAuth callback error:', {
       error: error.message,
-      response: error.response?.data,
-      requestBody: req.body
+      response: error.response?.data
+      // Note: Not logging req.body to prevent sensitive data in logs
     });
 
-    // Provide specific error messages
+    // Provide specific error messages with sanitization
     let errorMessage = ERROR_MESSAGES.AUTH_FAILED;
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    let details = null;
 
     if (error.response?.data?.error === 'invalid_grant') {
       errorMessage = 'Authorization code is invalid or expired. Please try logging in again.';
@@ -146,10 +168,17 @@ const callback = async (req, res) => {
       statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     }
 
+    // Sanitize error details if present
+    if (error.response?.data?.error_description) {
+      details = sanitizeErrorMessage(error.response.data.error_description);
+    } else if (error.message) {
+      details = sanitizeErrorMessage(error.message);
+    }
+
     res.status(statusCode).json({
       success: false,
       error: errorMessage,
-      details: error.response?.data?.error_description || error.message
+      ...(details && { details })
     });
   }
 };
@@ -239,7 +268,10 @@ const debugToken = async (req, res) => {
  */
 const refreshToken = async (req, res) => {
   try {
-    const tokenData = await refreshAccessToken(req.refreshToken);
+    const rawTokenData = await refreshAccessToken(req.refreshToken);
+    
+    // Validate and sanitize token data from Spotify API
+    const tokenData = validateSpotifyTokenData(rawTokenData);
     const { access_token, expires_in, refresh_token: new_refresh_token } = tokenData;
 
     // Set new access token with explicit security attributes
@@ -262,9 +294,15 @@ const refreshToken = async (req, res) => {
     });
   } catch (error) {
     console.error('Token refresh error:', error.response?.data || error.message);
+    
+    // Sanitize error message
+    const details = error.response?.data?.error_description || error.message;
+    const sanitizedDetails = sanitizeErrorMessage(details);
+    
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      error: ERROR_MESSAGES.TOKEN_REFRESH_FAILED
+      error: ERROR_MESSAGES.TOKEN_REFRESH_FAILED,
+      ...(sanitizedDetails && { details: sanitizedDetails })
     });
   }
 };
