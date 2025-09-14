@@ -1,0 +1,28 @@
+/**
+ * AlbumPage Styles
+ */
+
+.album-container {
+    margin-left: var(--main-content-margin-left);
+    padding: var(--spacing-xl);
+    min-height: calc(100vh - var(--appbar-height));
+}
+
+.album-header {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--spacing-lg);
+}
+
+.album-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-md);
+}
+
+.album-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+}

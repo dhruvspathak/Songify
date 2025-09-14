@@ -1,0 +1,51 @@
+/**
+ * Sidebar Component Styles
+ */
+
+.sidebar {
+    margin-top: var(--appbar-height);
+    padding: var(--spacing-lg) var(--spacing-sm);
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--appbar-height));
+    background-color: var(--color-background-primary);
+    color: var(--color-text-primary);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: var(--z-sticky);
+    overflow-y: auto;
+}
+
+.sidebar__items {
+    padding: 0;
+    margin-bottom: var(--spacing-lg);
+}
+
+.sidebar__item {
+    padding: var(--spacing-md) var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-sm);
+    transition: var(--transition-normal);
+    text-decoration: none;
+    color: inherit;
+}
+
+.sidebar__item:hover {
+    background-color: var(--color-background-secondary);
+}
+
+.sidebar__icon {
+    color: var(--color-text-primary) !important;
+    min-width: 40px;
+}
+
+.sidebar__text {
+    color: var(--color-text-primary);
+}
+
+.sidebar__text .MuiListItemText-primary {
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+}

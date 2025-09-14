@@ -1,0 +1,120 @@
+/**
+ * Music Player Component Styles
+ */
+
+.player-container {
+    width: 80%;
+    min-height: 15rem;
+    margin-left: var(--spacing-lg);
+    background-color: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+}
+
+.player-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--spacing-md);
+}
+
+.player-cover {
+    width: 80%;
+    max-width: 70px;
+    border-radius: var(--border-radius-md);
+    object-fit: cover;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--color-text-primary);
+    gap: var(--spacing-xs);
+}
+
+.player-track-name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.player-artist-name {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.player-btn {
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--border-radius-round);
+    color: var(--color-white);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.player-btn:hover {
+    background-color: var(--color-primary-hover);
+    transform: scale(1.05);
+}
+
+.player-btn:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.player-btn--primary {
+    width: 50px;
+    height: 50px;
+    font-size: var(--font-size-xl);
+}
+
+.player-btn--small {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-xs);
+    border-radius: var(--border-radius-sm);
+}
+
+.player-debug {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-background-tertiary);
+    gap: var(--spacing-sm);
+}
+
+.player-status {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--color-background-tertiary);
+}
+
+.player-status--connected {
+    color: var(--color-success);
+}
+
+.player-status--disconnected {
+    color: var(--color-error);
+}
+
+.player-status--connecting {
+    color: var(--color-warning);
+}

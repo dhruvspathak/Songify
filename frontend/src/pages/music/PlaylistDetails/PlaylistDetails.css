@@ -1,0 +1,57 @@
+/**
+ * PlaylistDetails Page Styles
+ */
+
+.playlist-details-container {
+    margin-left: var(--main-content-margin-left);
+    padding: var(--spacing-xl);
+    min-height: calc(100vh - var(--appbar-height));
+}
+
+.playlist-details-header {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--spacing-lg);
+}
+
+.playlist-details-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-md);
+}
+
+.playlist-tracks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+}
+
+.playlist-track-card {
+    background-color: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    transition: var(--transition-normal);
+}
+
+.playlist-track-card:hover {
+    background-color: var(--color-background-tertiary);
+    transform: translateY(-2px);
+}
+
+.playlist-track-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--spacing-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.playlist-track-artist {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
