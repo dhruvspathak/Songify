@@ -34,16 +34,22 @@ const createBasicAuthHeader = (clientId, clientSecret) => {
 /**
  * Generate secure cookie options based on environment
  * @param {string} environment - Current environment (development/production)
- * @param {number} maxAge - Cookie max age in milliseconds
+ * @param {number} maxAge - Cookie max age in milliseconds (optional)
  * @returns {object} Cookie options
  */
 const generateCookieOptions = (environment, maxAge) => {
-  return {
+  const options = {
     httpOnly: true,
     secure: environment === 'production',
-    sameSite: 'lax',
-    maxAge
+    sameSite: 'lax'
   };
+  
+  // Only set maxAge if provided to avoid undefined values
+  if (maxAge !== undefined && maxAge !== null) {
+    options.maxAge = maxAge;
+  }
+  
+  return options;
 };
 
 module.exports = {
