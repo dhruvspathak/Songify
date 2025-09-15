@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Grid, Typography } from '@mui/material';
+import { Typography, Grid } from '@mui/material';
 import './PlaylistDetails.css';
 import { useAuth, useSpotifyApi } from '../../../hooks';
 import { LoadingSpinner, ErrorMessage, MediaCard } from '../../../components/ui';
@@ -65,7 +65,7 @@ const PlaylistDetails = () => {
                 {playlistItems && playlistItems.length > 0 ? playlistItems.map((item, index) => {
                     const track = item.track;
                     return (
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={track?.id || index}>
+                        <Grid key={track?.id || index}>
                             <MediaCard
                                 id={track?.id || `track-${index}`}
                                 title={track?.name || 'Unknown Track'}
@@ -77,7 +77,7 @@ const PlaylistDetails = () => {
                         </Grid>
                     );
                 }) : (
-                    <Grid item xs={12}>
+                    <Grid>
                         <div className="text-center p-4">
                             <Typography variant="body1">
                                 No tracks available in this playlist.

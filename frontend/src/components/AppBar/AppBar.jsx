@@ -13,7 +13,7 @@ import './AppBar.css';
 import { useAuth, useSpotifyApi } from '../../hooks';
 import { REQUEST_CONFIG } from '../../constants';
 
-const AppBarComponent = ({ handleLogin, setTrackId }) => {
+const AppBarComponent = ({ handleLogin, setTrackId, isAuthenticated, sidebarCollapsed }) => {
     const [songResults, setSongResults] = useState([]);
     const [albumResults, setAlbumResults] = useState([]);
     const [artistResults, setArtistResults] = useState([]);
@@ -32,7 +32,6 @@ const AppBarComponent = ({ handleLogin, setTrackId }) => {
         marginLeft: 0,
         width: '100%',
         [theme.breakpoints.up('sm')]: {
-            marginLeft: theme.spacing(6.75),
             width: 'auto',
         },
     }))
@@ -114,40 +113,64 @@ const AppBarComponent = ({ handleLogin, setTrackId }) => {
         handleClose();
     };
 
+    const getAppBarClass = () => {
+        let baseClass = 'appbar';
+        if (!isAuthenticated) {
+            baseClass += ' appbar--no-sidebar';
+        } else if (sidebarCollapsed) {
+            baseClass += ' appbar--sidebar-collapsed';
+        }
+        return baseClass;
+    };
+
     return (
         <Box>
-            <AppBar position='fixed' className='appbar'>
-                <Toolbar>
-                    <Typography variant='h4' component={Link} to='/' color='white'>
-                        SONGIFY
-                    </Typography>
-                    <Tooltip title={!accessToken ? 'Log in to search' : ''}>
-                        <Search>
-                            <SearchIconWrapper>
-                                <SearchIcon />
-                            </SearchIconWrapper>
-                            <StyledInputBase
-                                id='search-bar'
-                                placeholder='find your groove...'
-                                inputProps={{ 'aria-label': 'search' }}
-                                onKeyDown={handleKeyDown}
-                                onClick={handleSearchClick}
-                                disabled={!accessToken}
-                            />
-                        </Search>
-                    </Tooltip>
-                    <Button className='login-button' onClick={handleLogin}>
-                        Login
-                    </Button>
+            <AppBar position='fixed' className={getAppBarClass()}>
+                <Toolbar className='appbar__toolbar'>
+                    <div className='appbar__spacer'></div>
+                    <Box className='appbar__actions'>
+                        <Tooltip title={!accessToken ? 'Log in to search' : ''}>
+                            <Search>
+                                <SearchIconWrapper>
+                                    <SearchIcon />
+                                </SearchIconWrapper>
+                                <StyledInputBase
+                                    id='search-bar'
+                                    placeholder='find your groove...'
+                                    inputProps={{ 'aria-label': 'search' }}
+                                    onKeyDown={handleKeyDown}
+                                    onClick={handleSearchClick}
+                                    disabled={!accessToken}
+                                />
+                            </Search>
+                        </Tooltip>
+                        <Button className='appbar__login-btn' onClick={handleLogin}>
+                            Login
+                        </Button>
+                    </Box>
                 </Toolbar>
             </AppBar>
             <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+                className="appbar__search-menu"
                 PaperProps={{
+                    className: 'appbar__search-dropdown',
                     style: {
                         width: document.getElementById('search-bar') ? document.getElementById('search-bar').clientWidth : 'auto',
+                        marginTop: '8px',
+                        maxHeight: '400px',
+                        overflowY: 'auto',
+                        minWidth: '300px',
                     },
                 }}
             >
@@ -192,6 +215,8 @@ const AppBarComponent = ({ handleLogin, setTrackId }) => {
 AppBarComponent.propTypes = {
     handleLogin: PropTypes.func.isRequired,
     setTrackId: PropTypes.func.isRequired,
+    isAuthenticated: PropTypes.bool,
+    sidebarCollapsed: PropTypes.bool,
 };
 
 export default AppBarComponent;

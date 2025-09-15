@@ -5,16 +5,78 @@
 .appbar {
     background-color: var(--color-background-primary) !important;
     z-index: var(--z-fixed) !important;
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    transition: margin-left var(--transition-normal), width var(--transition-normal);
 }
 
-.login-button {
-    margin-left: auto;
+.appbar--sidebar-collapsed {
+    margin-left: var(--sidebar-collapsed-width) !important;
+    width: calc(100% - var(--sidebar-collapsed-width)) !important;
+}
+
+.appbar--no-sidebar {
+    margin-left: 0 !important;
+    width: 100% !important;
+}
+
+.appbar__toolbar {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+}
+
+.appbar__spacer {
+    flex: 1;
+}
+
+.appbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.appbar__login-btn {
     color: var(--color-text-primary) !important;
     border: 1px solid var(--color-primary);
     transition: var(--transition-normal);
+    white-space: nowrap;
 }
 
-.login-button:hover {
+.appbar__login-btn:hover {
     background-color: var(--color-primary);
     color: var(--color-white) !important;
+}
+
+/* Search dropdown positioning */
+.appbar__search-menu {
+    z-index: calc(var(--z-fixed) + 10) !important;
+}
+
+.appbar__search-dropdown {
+    background-color: var(--color-background-secondary) !important;
+    border: 1px solid var(--color-background-tertiary) !important;
+    border-radius: var(--border-radius-md) !important;
+    box-shadow: var(--shadow-lg) !important;
+    margin-top: var(--spacing-xs) !important;
+}
+
+.appbar__search-dropdown .MuiMenuItem-root {
+    color: var(--color-text-primary) !important;
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+    border-bottom: 1px solid var(--color-background-tertiary);
+}
+
+.appbar__search-dropdown .MuiMenuItem-root:hover {
+    background-color: var(--color-background-tertiary) !important;
+}
+
+.appbar__search-dropdown .MuiMenuItem-root:last-child {
+    border-bottom: none;
+}
+
+.appbar__search-dropdown .MuiMenuItem-root[aria-disabled="true"] {
+    color: var(--color-primary) !important;
+    font-weight: var(--font-weight-semibold) !important;
+    background-color: var(--color-background-primary) !important;
 }

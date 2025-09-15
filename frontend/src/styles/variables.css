@@ -38,7 +38,8 @@
   --spacing-xxxl: 4rem;    /* 64px */
   
   /* Layout */
-  --sidebar-width: 265px;
+  --sidebar-width: 320px;
+  --sidebar-collapsed-width: 70px;
   --appbar-height: 64px;
   --main-content-margin-left: 14.5rem;
   --container-max-width: 1200px;

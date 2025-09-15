@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Grid, Typography } from '@mui/material';
+import { Typography, Grid } from '@mui/material';
 import './AlbumDetails.css';
 import { useAuth, useSpotifyApi } from '../../../hooks';
 import { LoadingSpinner, ErrorMessage, MediaCard } from '../../../components/ui';
@@ -63,7 +63,7 @@ const AlbumDetails = () => {
             </div>
             <Grid container spacing={3} className="grid-cols-responsive">
                 {albumTracks && albumTracks.length > 0 ? albumTracks.map((track, index) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={track.id || index}>
+                    <Grid key={track.id || index}>
                         <MediaCard
                             id={track.id || `track-${index}`}
                             title={track.name || 'Unknown Track'}
@@ -74,7 +74,7 @@ const AlbumDetails = () => {
                         />
                     </Grid>
                 )) : (
-                    <Grid item xs={12}>
+                    <Grid>
                         <div className="text-center p-4">
                             <Typography variant="body1">
                                 No tracks available in this album.
