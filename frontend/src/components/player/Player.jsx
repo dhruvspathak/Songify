@@ -78,7 +78,19 @@ const MusicPlayer = ({ trackId }) => {
                 setTrack(state.track_window.current_track);
                 setPaused(state.paused);
                 player.getCurrentState().then(state => {
-                    setActive(!!state);
+                    const isActive = !!state;
+                    setActive(isActive);
+                    
+                    // Emit music state change event for sidebar
+                    const musicStateEvent = new CustomEvent('musicStateChange', {
+                        detail: {
+                            isPaused: state.paused,
+                            isActive: isActive,
+                            hasTrack: !!state.track_window.current_track,
+                            currentTrack: state.track_window.current_track
+                        }
+                    });
+                    window.dispatchEvent(musicStateEvent);
                 });
             });
 

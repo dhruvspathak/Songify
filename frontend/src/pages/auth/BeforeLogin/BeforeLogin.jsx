@@ -15,7 +15,7 @@ const BeforeLogin = () => {
                     And Everything can be listened Here!
                 </Typography>
                 <Typography variant="h4" className="welcome-cta">
-                    Login with your Spotify account and experience the melody
+                    Sign-Up or Login with your Songify account to experience the melody
                 </Typography>
             </div>
         </div>

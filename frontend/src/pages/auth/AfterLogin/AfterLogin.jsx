@@ -121,7 +121,7 @@ const AfterLogin = () => {
             </div>
             <Grid container spacing={3} className="grid-cols-responsive">
                 {playlists && playlists.length > 0 ? playlists.map((playlist, index) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={playlist.id || index}>
+                    <Grid key={playlist.id || index}>
                         <MediaCard
                             id={playlist.id}
                             title={playlist.name}
@@ -133,7 +133,7 @@ const AfterLogin = () => {
                         />
                     </Grid>
                 )) : (
-                    <Grid item xs={12}>
+                    <Grid>
                         <div className="text-center p-4">
                             <Typography variant="body1">
                                 No playlists available. Please check your Spotify permissions or try refreshing the page.

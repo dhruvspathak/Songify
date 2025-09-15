@@ -88,9 +88,19 @@ body {
 }
 
 .main-content {
-  margin-left: var(--main-content-margin-left);
+  margin-left: var(--sidebar-width);
+  margin-top: var(--appbar-height);
   padding: var(--spacing-lg);
   min-height: calc(100vh - var(--appbar-height));
+  transition: margin-left var(--transition-normal);
+}
+
+.main-content--no-sidebar {
+  margin-left: 0 !important;
+}
+
+.main-content--sidebar-collapsed {
+  margin-left: var(--sidebar-collapsed-width) !important;
 }
 
 .section-header {
@@ -181,23 +191,50 @@ body {
 .grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
 .grid-cols-6 { grid-template-columns: repeat(6, 1fr); }
 
-/* Responsive grid */
-@media (max-width: 768px) {
+/* Responsive grid - MUI Grid container responsive behavior */
+.grid-cols-responsive {
+  display: grid !important;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+@media (max-width: 600px) {
+  .grid-cols-responsive {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 960px) {
   .grid-cols-responsive {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (min-width: 960px) and (max-width: 1280px) {
   .grid-cols-responsive {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 1280px) {
   .grid-cols-responsive {
     grid-template-columns: repeat(4, 1fr);
   }
+}
+
+/* Grid item overrides for MUI Grid components within responsive grids */
+.grid-cols-responsive > .MuiGrid-root {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  flex-basis: auto !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Column span utilities for grid items */
+.col-span-full {
+  grid-column: 1 / -1;
 }
 
 /* Accessibility */

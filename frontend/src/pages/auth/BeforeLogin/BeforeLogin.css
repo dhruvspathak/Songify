@@ -6,9 +6,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: calc(100vh - var(--appbar-height));
+    min-height: 100vh;
     padding: var(--spacing-xl);
-    margin-left: var(--main-content-margin-left);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
 }
 
 .welcome-content {
@@ -39,6 +44,7 @@
 }
 
 .welcome-cta {
+    font-size: var(--font-size-lg) !important;
     color: var(--color-text-primary) !important;
     font-weight: var(--font-weight-medium) !important;
     padding: var(--spacing-md);

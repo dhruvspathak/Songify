@@ -70,7 +70,7 @@ const AlbumPage = () => {
                     </div>
                     <Grid container spacing={3} className="grid-cols-responsive">
                         {albums && albums.length > 0 ? albums.map((album, index) => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={album.id || index}>
+                            <Grid key={album.id || index}>
                                 <MediaCard
                                     id={album.id}
                                     title={album.name}
@@ -82,7 +82,7 @@ const AlbumPage = () => {
                                 />
                             </Grid>
                         )) : (
-                            <Grid item xs={12}>
+                            <Grid>
                                 <div className="text-center p-4">
                                     <p>No albums available. Please check your connection or try again later.</p>
                                 </div>
